@@ -1,6 +1,7 @@
 import React, { useState } from "react";
 import { PostBlock } from "../types.js";
 import { FileDown, Code, Play, Check, Copy } from "lucide-react";
+import { useLanguage } from "../i18n.js";
 
 interface BlockRendererProps {
   block: PostBlock;
@@ -8,12 +9,13 @@ interface BlockRendererProps {
 
 export function BlockRenderer({ block }: BlockRendererProps) {
   const { type, data, id } = block;
+  const { t } = useLanguage();
 
   switch (type) {
     case "RICH_TEXT": {
       return (
         <div 
-          className="prose max-w-none text-neutral-700 leading-relaxed space-y-4"
+          className="prose max-w-none text-neutral-700 leading-relaxed space-y-4 text-start"
           dangerouslySetInnerHTML={{ __html: data.html || "" }}
         />
       );
@@ -54,8 +56,8 @@ export function BlockRenderer({ block }: BlockRendererProps) {
 
       if (!aparatId) {
         return (
-          <div className="bg-neutral-100 border border-dashed border-neutral-300 p-6 rounded-xl flex items-center justify-center text-neutral-500 text-sm font-mono my-6">
-            <Play className="w-5 h-5 mr-2 text-neutral-400" /> Invalid Aparat Video ID
+          <div className="bg-neutral-100 border border-dashed border-neutral-300 p-6 rounded-xl flex items-center justify-center text-neutral-500 text-sm font-mono my-6 text-start">
+            <Play className="w-5 h-5 me-2 text-neutral-400 shrink-0" /> {t("block_invalid_video")}
           </div>
         );
       }
@@ -97,27 +99,27 @@ export function BlockRenderer({ block }: BlockRendererProps) {
         <div className="my-6 rounded-xl overflow-hidden border border-neutral-200 shadow-sm bg-neutral-900 text-neutral-100">
           <div className="flex items-center justify-between px-4 py-2 bg-neutral-950 border-b border-neutral-800">
             <span className="text-xs font-mono text-neutral-400 uppercase tracking-wider flex items-center">
-              <Code className="w-4 h-4 mr-1.5 text-brand" /> {language}
+              <Code className="w-4 h-4 me-1.5 text-brand" /> {language}
             </span>
             <button 
               onClick={handleCopy}
-              className="flex items-center text-xs font-mono text-neutral-400 hover:text-neutral-100 transition-colors py-1 px-2 rounded hover:bg-neutral-800"
+              className="flex items-center text-xs font-mono text-neutral-400 hover:text-neutral-100 transition-colors py-1 px-2 rounded hover:bg-neutral-800 cursor-pointer"
               title="Copy code to clipboard"
             >
               {copied ? (
                 <>
-                  <Check className="w-3.5 h-3.5 mr-1 text-emerald-500" />
-                  Copied!
+                  <Check className="w-3.5 h-3.5 me-1 text-emerald-500" />
+                  {t("home_copied")}
                 </>
               ) : (
                 <>
-                  <Copy className="w-3.5 h-3.5 mr-1" />
-                  Copy
+                  <Copy className="w-3.5 h-3.5 me-1" />
+                  {t("home_copy_snippet")}
                 </>
               )}
             </button>
           </div>
-          <pre className="p-4 overflow-x-auto text-sm leading-relaxed font-mono">
+          <pre className="p-4 overflow-x-auto text-sm leading-relaxed font-mono text-start" dir="ltr">
             <code>{codeText}</code>
           </pre>
         </div>
@@ -128,17 +130,17 @@ export function BlockRenderer({ block }: BlockRendererProps) {
       const downloadUrl = id ? `/downloads/${id}` : (data.link || "#");
       
       return (
-        <div className="my-6 p-5 rounded-xl border border-neutral-200 bg-white hover:border-brand/40 transition-all flex flex-col sm:flex-row sm:items-center justify-between gap-4 shadow-sm">
-          <div className="flex items-start space-x-3.5">
-            <div className="p-3 rounded-lg bg-emerald-50 text-brand">
+        <div className="my-6 p-5 rounded-xl border border-neutral-200 bg-white hover:border-brand/40 transition-all flex flex-col sm:flex-row sm:items-center justify-between gap-4 shadow-sm text-start">
+          <div className="flex items-start gap-3.5">
+            <div className="p-3 rounded-lg bg-emerald-50 text-brand shrink-0">
               <FileDown className="w-6 h-6" />
             </div>
             <div>
               <h4 className="text-base font-semibold text-neutral-900 tracking-tight">
-                {data.filename || "Attachment File"}
+                {data.filename || t("block_attachment_file")}
               </h4>
               <p className="text-xs font-mono text-neutral-500 mt-0.5">
-                Size: {data.size || "Unknown Size"} • {data.downloads || 0} downloads
+                {t("home_download_stats")}: {data.size || t("block_unknown_size")} • {data.downloads || 0} {t("block_downloads_count")}
               </p>
               {data.description && (
                 <p className="text-sm text-neutral-600 mt-1.5">
@@ -153,7 +155,7 @@ export function BlockRenderer({ block }: BlockRendererProps) {
             rel="noopener noreferrer"
             className="inline-flex items-center justify-center px-4.5 py-2.5 rounded-lg bg-neutral-900 text-white font-medium text-sm hover:bg-brand transition-colors whitespace-nowrap shadow-sm cursor-pointer"
           >
-            <FileDown className="w-4 h-4 mr-1.5" /> Free Download
+            <FileDown className="w-4 h-4 me-1.5" /> {t("block_trigger_download")}
           </a>
         </div>
       );

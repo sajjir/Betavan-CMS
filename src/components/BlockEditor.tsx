@@ -21,7 +21,7 @@ import {
   ListOrdered
 } from "lucide-react";
 import { MediaModal } from "./MediaModal.js";
-import { useLanguage } from "../admin-i18n.js";
+import { useLanguage } from "../i18n.js";
 
 // Simplified Tiptap rich text wrapper for each rich text block
 function TiptapEditor({ value, onChange }: { value: string; onChange: (val: string) => void }) {

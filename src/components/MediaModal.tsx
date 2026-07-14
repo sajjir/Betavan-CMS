@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from "react";
 import { Media } from "../types.js";
 import { X, Search, Upload, Folder, Tag, AlertCircle, Check, FileDown } from "lucide-react";
-import { useLanguage } from "../admin-i18n.js";
+import { useLanguage } from "../i18n.js";
 
 interface MediaModalProps {
   onClose: () => void;

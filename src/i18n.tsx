@@ -115,7 +115,79 @@ export const translations = {
     "media_empty": "No media assets found matching the criteria.",
     "media_select_asset": "Select Asset",
     "media_loading": "Retrieving media library assets...",
-    "media_drag_drop": "Select File or Drag & Drop"
+    "media_drag_drop": "Select File or Drag & Drop",
+
+    // Navbar
+    "nav_home": "Home",
+    "nav_login": "Log In",
+
+    // Public Blog Home
+    "home_title_badge": "// Technical Workshop & Snippets",
+    "home_hero_title": "Stop starting from scratch. Grab working code & assets.",
+    "home_hero_subtitle": "Betavan.ir is a zero-friction playground for web automation, custom AI integrations, and high-performance WordPress snippet files. Built for builders who need things working in seconds.",
+    "home_btn_browse": "Browse Toolbench",
+    "home_btn_pillars": "Explore Pillars",
+    "home_featured_badge": "Featured Asset",
+    "home_demo_badge": "Demo Snippet",
+    "home_demo_title": "Dequeue Gutenberg CSS blocks on frontend",
+    "home_demo_excerpt": "Instantly speed up WordPress sites by preventing Gutenberg assets from loading on non-block landing pages.",
+    "home_demo_copy": "Copy Snippet",
+    "home_demo_copied": "Copied!",
+    "home_snippet_language": "Source language",
+    "home_copy_snippet": "Copy Snippet",
+    "home_copied": "Copied!",
+    "home_view_snippet": "[ View Complete File Snippet ]",
+    "home_download_stats": "Size",
+    "home_btn_download": "Download Asset",
+    "home_explore_tutorial": "Explore this tutorial series",
+    "home_pillars_badge": "// Core Toolbench Pillars",
+    "home_pillars_title": "Select Your Workspace",
+    "home_pillars_subtitle": "We organize our snippets, files, and video guides into three high-focus functional disciplines.",
+    "home_pillar_ai_title": "AI & Technology",
+    "home_pillar_ai_desc": "API connections, automation scripts, and LLM prompt layouts to supercharge your systems.",
+    "home_pillar_ai_btn": "Browse AI Snippets →",
+    "home_pillar_business_title": "Business & Entrepreneurship",
+    "home_pillar_business_desc": "WordPress snippets, micro-SaaS structures, and clean code configurations for developers.",
+    "home_pillar_business_btn": "Browse business snippets →",
+    "home_pillar_marketing_title": "Marketing & Automation",
+    "home_pillar_marketing_desc": "Analytics triggers, utility landing scripts, and SEO configurations to drive performance.",
+    "home_pillar_marketing_btn": "Browse marketing assets →",
+
+    // Toolbench Filter & List
+    "home_all_publications": "All Publications",
+    "home_clear_filters": "[ Clear Filters ]",
+    "home_reading_state": "Reading toolbench state...",
+    "home_empty_filter": "No active assets found under the selected filter.",
+    "home_show_all": "Show all publications",
+    "home_video_tutorial_badge": "VIDEO TUTORIAL",
+    "home_get_asset": "Get Asset",
+    "home_filter_by_tag": "Filter by Tag",
+    "home_all_tags": "All Tags",
+    "home_about_badge": "// ABOUT THE WORKSHOP",
+    "home_about_desc": "Every resource on Betavan is thoroughly tested before seeding. Code blocks can be deployed immediately in WordPress, Node, and automation clients like n8n or Python.",
+    "home_about_active": "V2.0 Core Active",
+
+    // Single Post
+    "post_back_link": "← BACK TO TOOLBENCH",
+    "post_published_on": "Published on",
+    "post_by": "By",
+    "post_min_read": "min read",
+    "post_draft_mode": "Draft Mode",
+    "post_related_title": "// Related Publications",
+    "post_related_subtitle": "Continue reading in",
+    "post_not_found": "Unable to load article",
+    "post_not_found_desc": "Article does not exist",
+    "post_return_btn": "Return to directory",
+    "post_fetch_details": "Fetching publication details...",
+
+    // Block Renderer
+    "block_free_download": "FREE DOWNLOAD",
+    "block_trigger_download": "Trigger Free Download",
+    "block_invalid_video": "Invalid Aparat Video ID",
+    "block_attachment_file": "Attachment File",
+    "block_unknown_size": "Unknown Size",
+    "block_downloads_count": "downloads",
+    "footer_copyright": "Developed by Betavan. All content and files are open."
   },
   fa: {
     // Navbar / Toggle
@@ -229,7 +301,79 @@ export const translations = {
     "media_empty": "هیچ فایلی مطابق با فیلترها پیدا نشد.",
     "media_select_asset": "انتخاب رسانه",
     "media_loading": "در حال دریافت دارایی‌های کتابخانه رسانه...",
-    "media_drag_drop": "انتخاب فایل یا کشیدن و رها کردن در این بخش"
+    "media_drag_drop": "انتخاب فایل یا کشیدن و رها کردن در این بخش",
+
+    // Navbar
+    "nav_home": "خانه",
+    "nav_login": "ورود",
+
+    // Public Blog Home
+    "home_title_badge": "// کارگاه فنی و قطعه کدهای آماده",
+    "home_hero_title": "چرخ را از اول اختراع نکنید. کدهای آماده و تست‌شده را بردارید.",
+    "home_hero_subtitle": "بتوان یک محیط بدون دردسر برای اتوماسیون وب، یکپارچه‌سازی هوش مصنوعی و کدهای آماده وردپرس با کارایی بالاست. ساخته شده برای توسعه‌دهندگانی که می‌خواهند پروژه‌شان در چند ثانیه کار کند.",
+    "home_btn_browse": "مرور ابزارها و کدهای آماده",
+    "home_btn_pillars": "بررسی دسته‌بندی‌های اصلی",
+    "home_featured_badge": "دارایی شاخص",
+    "home_demo_badge": "نمونه قطعه کد",
+    "home_demo_title": "غیرفعال کردن استایل‌های Gutenberg در بخش کاربری وردپرس",
+    "home_demo_excerpt": "سرعت سایت وردپرسی خود را با جلوگیری از لود فایل‌های سنگین گوتنبرگ در صفحات غیر بلاگ، فورا افزایش دهید.",
+    "home_demo_copy": "کپی قطعه کد",
+    "home_demo_copied": "کپی شد!",
+    "home_snippet_language": "زبان منبع",
+    "home_copy_snippet": "کپی قطعه کد",
+    "home_copied": "کپی شد!",
+    "home_view_snippet": "[ مشاهده قطعه کد کامل ]",
+    "home_download_stats": "حجم",
+    "home_btn_download": "دانلود فایل دارایی",
+    "home_explore_tutorial": "مشاهده این مجموعه آموزشی",
+    "home_pillars_badge": "// ستون‌های اصلی کارگاه توان",
+    "home_pillars_title": "محیط کاری خود را انتخاب کنید",
+    "home_pillars_subtitle": "کدها، فایل‌ها و ویدیوهای آموزشی ما در سه حوزه کاربردی با بازدهی بالا دسته‌بندی شده‌اند.",
+    "home_pillar_ai_title": "هوش مصنوعی و فناوری",
+    "home_pillar_ai_desc": "اتصالات API، اسکریپت‌های اتوماسیون و سناریوهای آماده LLM برای ارتقای سیستم‌های شما.",
+    "home_pillar_ai_btn": "مرور کدهای هوش مصنوعی ←",
+    "home_pillar_business_title": "کسب‌وکار و کارآفرینی",
+    "home_pillar_business_desc": "قطعه کدهای وردپرس، ساختارهای میکروساس (Micro-SaaS) و پیکربندی‌های تمیز برای توسعه‌دهندگان.",
+    "home_pillar_business_btn": "مرور کدهای کسب‌وکار ←",
+    "home_pillar_marketing_title": "بازاریابی و اتوماسیون",
+    "home_pillar_marketing_desc": "تریگرهای آنالیتیکس، اسکریپت‌های فرود کاربردی و ساختارهای متای سئو برای افزایش بازدهی.",
+    "home_pillar_marketing_btn": "مرور دارایی‌های بازاریابی ←",
+
+    // Toolbench Filter & List
+    "home_all_publications": "همه انتشارات",
+    "home_clear_filters": "[ پاک کردن فیلترها ]",
+    "home_reading_state": "در حال خواندن وضعیت کارگاه ابزار...",
+    "home_empty_filter": "هیچ محتوایی با فیلتر انتخاب‌شده یافت نشد.",
+    "home_show_all": "نمایش همه انتشارات",
+    "home_video_tutorial_badge": "آموزش ویدیویی",
+    "home_get_asset": "دریافت فایل و کد",
+    "home_filter_by_tag": "فیلتر بر اساس برچسب",
+    "home_all_tags": "همه برچسب‌ها",
+    "home_about_badge": "// درباره کارگاه توان",
+    "home_about_desc": "تمام منابع در بتوان قبل از انتشار به طور کامل تست می‌شوند. کدهای آماده را می‌توان بلافاصله در وردپرس، نود جی‌اس و کلاینت‌های اتوماسیون مانند n8n یا پایتون استفاده کرد.",
+    "home_about_active": "هسته فعال نسخه ۲.۰",
+
+    // Single Post
+    "post_back_link": "← بازگشت به کارگاه ابزار",
+    "post_published_on": "منتشر شده در",
+    "post_by": "توسط",
+    "post_min_read": "دقیقه زمان مطالعه",
+    "post_draft_mode": "حالت پیش‌نویس",
+    "post_related_title": "// مطالب مرتبط",
+    "post_related_subtitle": "ادامه مطالعه در دسته‌بندی",
+    "post_not_found": "امکان بارگذاری مقاله وجود ندارد",
+    "post_not_found_desc": "مقاله مورد نظر وجود ندارد",
+    "post_return_btn": "بازگشت به فهرست",
+    "post_fetch_details": "در حال دریافت جزئیات مقاله...",
+
+    // Block Renderer
+    "block_free_download": "دانلود رایگان",
+    "block_trigger_download": "شروع دانلود رایگان",
+    "block_invalid_video": "شناسه ویدیوی آپارات نامعتبر است",
+    "block_attachment_file": "فایل ضمیمه",
+    "block_unknown_size": "حجم نامشخص",
+    "block_downloads_count": "دانلود",
+    "footer_copyright": "توسعه‌یافته توسط بتوان. تمامی محتوا و فایل‌ها منبع‌باز و آزاد هستند."
   }
 };
 
@@ -247,7 +391,7 @@ export function LanguageProvider({ children }: { children: React.ReactNode }) {
     if (stored === "fa" || stored === "en") {
       return stored as Locale;
     }
-    return "en";
+    return "fa"; // Default to "fa" for primary Persian audience
   });
 
   const setLocale = (newLocale: Locale) => {
@@ -260,6 +404,12 @@ export function LanguageProvider({ children }: { children: React.ReactNode }) {
     // Return key translation or fallback to English key, then key itself
     return (dict as any)[key] || (translations.en as any)[key] || key;
   };
+
+  useEffect(() => {
+    // Sync dir attribute on html/body tags
+    const htmlDir = locale === "fa" ? "rtl" : "ltr";
+    document.documentElement.dir = htmlDir;
+  }, [locale]);
 
   return (
     <LanguageContext.Provider value={{ locale, setLocale, t }}>

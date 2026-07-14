@@ -1,7 +1,7 @@
 import React from "react";
 import { Link, useNavigate, useLocation } from "react-router-dom";
 import { LogOut, User, Cpu, Compass } from "lucide-react";
-import { useLanguage } from "../admin-i18n.js";
+import { useLanguage } from "../i18n.js";
 
 export function Navbar() {
   const navigate = useNavigate();
@@ -50,23 +50,21 @@ export function Navbar() {
 
           {/* Right Action */}
           <div className="flex items-center gap-3">
-            {/* Always visible on admin pages, or if logged in */}
-            {isAdminOrLogin && (
-              <div className="flex items-center bg-neutral-100 rounded-lg p-0.5 border border-neutral-200">
-                <button
-                  onClick={() => setLocale("en")}
-                  className={`px-2 py-1 text-[10px] font-bold rounded-md transition-all ${locale === "en" ? "bg-neutral-900 text-white shadow-xs" : "text-neutral-500 hover:text-neutral-800"}`}
-                >
-                  EN
-                </button>
-                <button
-                  onClick={() => setLocale("fa")}
-                  className={`px-2 py-1 text-[10px] font-bold rounded-md transition-all font-sans ${locale === "fa" ? "bg-neutral-900 text-white shadow-xs" : "text-neutral-500 hover:text-neutral-800"}`}
-                >
-                  فا
-                </button>
-              </div>
-            )}
+            {/* Always visible so visitors can switch language */}
+            <div className="flex items-center bg-neutral-100 rounded-lg p-0.5 border border-neutral-200">
+              <button
+                onClick={() => setLocale("en")}
+                className={`px-2 py-1 text-[10px] font-bold rounded-md transition-all ${locale === "en" ? "bg-neutral-900 text-white shadow-xs" : "text-neutral-500 hover:text-neutral-800"}`}
+              >
+                EN
+              </button>
+              <button
+                onClick={() => setLocale("fa")}
+                className={`px-2 py-1 text-[10px] font-bold rounded-md transition-all font-sans ${locale === "fa" ? "bg-neutral-900 text-white shadow-xs" : "text-neutral-500 hover:text-neutral-800"}`}
+              >
+                فا
+              </button>
+            </div>
 
             {token && user ? (
               <div className="flex items-center gap-3">
@@ -89,7 +87,7 @@ export function Navbar() {
                 to="/login"
                 className="inline-flex items-center justify-center px-4 py-2 rounded-lg bg-neutral-900 text-white font-semibold text-xs hover:bg-brand transition-colors shadow-sm cursor-pointer"
               >
-                {t("login_btn")}
+                {t("nav_login")}
               </Link>
             )}
           </div>
