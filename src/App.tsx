@@ -31,6 +31,8 @@ import { Navbar } from "./components/Navbar.js";
 import { BlockRenderer } from "./components/BlockRenderer.js";
 import { BlockEditor } from "./components/BlockEditor.js";
 import { LanguageProvider, useLanguage } from "./i18n.js";
+import { AdminCategories } from "./components/AdminCategories.js";
+import { AdminSettings } from "./components/AdminSettings.js";
 
 // Helper to check auth
 const isAuthenticated = () => !!localStorage.getItem("accessToken");
@@ -1586,9 +1588,43 @@ function EditPost() {
                 className="w-full text-sm bg-neutral-50 border border-neutral-200 rounded-lg px-3 py-2 focus:outline-none focus:border-brand focus:bg-white font-medium"
               >
                 <option value="">{t("dashboard_uncategorized")}</option>
-                {categories.map(cat => (
-                  <option key={cat.id} value={cat.id}>{cat.name}</option>
-                ))}
+                {(() => {
+                  const buildOptionTree = (flatList: any[]) => {
+                    const idMap: Record<string, any> = {};
+                    flatList.forEach(c => { idMap[c.id] = { ...c, children: [] }; });
+                    const roots: any[] = [];
+                    flatList.forEach(c => {
+                      const node = idMap[c.id];
+                      if (node.parentId && idMap[node.parentId]) {
+                        idMap[node.parentId].children.push(node);
+                      } else {
+                        roots.push(node);
+                      }
+                    });
+                    return roots;
+                  };
+
+                  const flattenTree = (nodes: any[], level = 0): { id: string; name: string; level: number }[] => {
+                    let res: any[] = [];
+                    nodes.forEach(n => {
+                      res.push({ id: n.id, name: n.name, level });
+                      if (n.children && n.children.length > 0) {
+                        res = res.concat(flattenTree(n.children, level + 1));
+                      }
+                    });
+                    return res;
+                  };
+
+                  const orderedList = flattenTree(buildOptionTree(categories));
+                  return orderedList.map(({ id, name, level }) => {
+                    const prefix = level > 0 ? "  ".repeat(level) + "↳ " : "";
+                    return (
+                      <option key={id} value={id}>
+                        {prefix}{name}
+                      </option>
+                    );
+                  });
+                })()}
               </select>
             </div>
 
@@ -1715,6 +1751,22 @@ export default function App() {
                 element={
                   <PrivateRoute>
                     <AdminDashboard />
+                  </PrivateRoute>
+                } 
+              />
+              <Route 
+                path="/admin/categories" 
+                element={
+                  <PrivateRoute>
+                    <AdminCategories />
+                  </PrivateRoute>
+                } 
+              />
+              <Route 
+                path="/admin/settings" 
+                element={
+                  <PrivateRoute>
+                    <AdminSettings />
                   </PrivateRoute>
                 } 
               />

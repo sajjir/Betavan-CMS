@@ -364,7 +364,7 @@ export async function getCategories(req: Request, res: Response) {
 
 export async function createCategory(req: Request, res: Response) {
   try {
-    const { name, slug } = req.body;
+    const { name, slug, parentId } = req.body;
     if (!name) {
       return res.status(400).json({ error: "Category name is required" });
     }
@@ -374,12 +374,107 @@ export async function createCategory(req: Request, res: Response) {
     const category = await prisma.category.create({
       data: {
         name,
-        slug: catSlug
+        slug: catSlug,
+        parentId: parentId || null
       }
     });
 
     return res.status(201).json(category);
   } catch (error) {
+    console.error("Create category error:", error);
+    return res.status(500).json({ error: "Internal server error" });
+  }
+}
+
+export async function updateCategory(req: Request, res: Response) {
+  try {
+    const { id } = req.params;
+    const { name, slug, parentId } = req.body;
+
+    const existingCategory = await prisma.category.findUnique({
+      where: { id }
+    });
+
+    if (!existingCategory) {
+      return res.status(404).json({ error: "Category not found" });
+    }
+
+    const updateData: any = {};
+    if (name !== undefined) updateData.name = name;
+    if (slug !== undefined) updateData.slug = slugify(slug);
+    
+    if (parentId !== undefined) {
+      if (parentId) {
+        // Prevent setting parent to itself
+        if (parentId === id) {
+          return res.status(400).json({ error: "A category cannot be its own parent" });
+        }
+        
+        // Prevent circular reference (walking up parentId chain)
+        let currParentId = parentId;
+        while (currParentId) {
+          if (currParentId === id) {
+            return res.status(400).json({ error: "Circular reference detected" });
+          }
+          const parentCat = await prisma.category.findUnique({
+            where: { id: currParentId },
+            select: { parentId: true }
+          });
+          if (!parentCat) break;
+          currParentId = parentCat.parentId;
+        }
+        
+        updateData.parentId = parentId;
+      } else {
+        updateData.parentId = null;
+      }
+    }
+
+    const updatedCategory = await prisma.category.update({
+      where: { id },
+      data: updateData
+    });
+
+    return res.json(updatedCategory);
+  } catch (error) {
+    console.error("Update category error:", error);
+    return res.status(500).json({ error: "Internal server error" });
+  }
+}
+
+export async function deleteCategory(req: Request, res: Response) {
+  try {
+    const { id } = req.params;
+    const { reassignTo } = req.body; // Can be a category id or null
+
+    const existingCategory = await prisma.category.findUnique({
+      where: { id }
+    });
+
+    if (!existingCategory) {
+      return res.status(404).json({ error: "Category not found" });
+    }
+
+    // Reassign posts to reassignTo category or set to null (uncategorized)
+    await prisma.post.updateMany({
+      where: { categoryId: id },
+      data: { categoryId: reassignTo || null }
+    });
+
+    // Cascade-promote children: set children's parentId to the deleted category's parentId
+    await prisma.category.updateMany({
+      where: { parentId: id },
+      data: { parentId: existingCategory.parentId }
+    });
+
+    // Delete the category
+    await prisma.category.delete({
+      where: { id }
+    });
+
+    return res.json({ message: "Category deleted successfully" });
+  } catch (error) {
+    console.error("Delete category error:", error);
     return res.status(500).json({ error: "Internal server error" });
   }
 }

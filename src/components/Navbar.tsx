@@ -42,10 +42,24 @@ export function Navbar() {
           </Link>
 
           {/* Navigation Links */}
-          <nav className="hidden md:flex gap-6">
+          <nav className="hidden md:flex gap-6 items-center">
             <Link to="/" className="text-sm font-medium text-neutral-600 hover:text-neutral-900 transition-colors flex items-center">
               <Compass className="w-4 h-4 me-1.5 text-neutral-400" /> {t("nav_back_to_blog")}
             </Link>
+            {token && user && (
+              <>
+                <span className="text-neutral-300">|</span>
+                <Link to="/admin" className="text-sm font-semibold text-neutral-600 hover:text-neutral-900 transition-colors">
+                  {t("nav_admin_posts")}
+                </Link>
+                <Link to="/admin/categories" className="text-sm font-semibold text-neutral-600 hover:text-neutral-900 transition-colors">
+                  {t("nav_admin_categories")}
+                </Link>
+                <Link to="/admin/settings" className="text-sm font-semibold text-neutral-600 hover:text-neutral-900 transition-colors">
+                  {t("nav_admin_settings")}
+                </Link>
+              </>
+            )}
           </nav>
 
           {/* Right Action */}

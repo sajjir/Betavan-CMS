@@ -61,10 +61,13 @@ app.post("/api/auth/login", authController.login);
 app.post("/api/auth/refresh", authController.refresh);
 app.post("/api/auth/logout", authController.logout);
 app.get("/api/auth/me", authenticate, authController.me);
+app.put("/api/auth/password", authenticate, authController.changePassword);
 
 // Categories Module
 app.get("/api/categories", postController.getCategories);
 app.post("/api/categories", authenticate, requireRole(["ADMIN", "EDITOR"]), postController.createCategory);
+app.put("/api/categories/:id", authenticate, requireRole(["ADMIN", "EDITOR"]), postController.updateCategory);
+app.delete("/api/categories/:id", authenticate, requireRole(["ADMIN", "EDITOR"]), postController.deleteCategory);
 
 // Tags Module
 app.get("/api/tags", postController.getTags);

@@ -4,29 +4,32 @@ import { hashPassword } from "./hash.js";
 export async function seedDatabase() {
   console.log("Checking if database needs seeding...");
   
-  // Seed admin user
-  const adminEmail = "admin@betavan.ir";
   const userCount = await prisma.user.count();
   
   if (userCount === 0) {
     console.log("No users found. Seeding default admin users...");
     
-    // Create admin@betavan.ir
+    const adminEmail = process.env.SEED_ADMIN_EMAIL || "betavan.co@gmail.com";
+    const adminName = process.env.SEED_ADMIN_NAME || "Betavan Admin";
+    let adminPassword = process.env.SEED_ADMIN_PASSWORD;
+
+    if (!adminPassword) {
+      const chars = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789!@#$";
+      adminPassword = "";
+      for (let i = 0; i < 12; i++) {
+        adminPassword += chars.charAt(Math.floor(Math.random() * chars.length));
+      }
+      console.log("=====================================================================");
+      console.log(`Generated admin password (save this, it will not be shown again): ${adminPassword}`);
+      console.log("=====================================================================");
+    }
+
+    // Create the seeded admin
     await prisma.user.create({
       data: {
         email: adminEmail,
-        name: "Betavan Admin",
-        passwordHash: hashPassword("admin123"),
-        role: "ADMIN"
-      }
-    });
-
-    // Create betavan.co@gmail.com
-    await prisma.user.create({
-      data: {
-        email: "betavan.co@gmail.com",
-        name: "Betavan Founder",
-        passwordHash: hashPassword("admin123"),
+        name: adminName,
+        passwordHash: hashPassword(adminPassword),
         role: "ADMIN"
       }
     });

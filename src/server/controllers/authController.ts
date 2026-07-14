@@ -1,6 +1,6 @@
 import { Response } from "express";
 import { prisma } from "../db.js";
-import { comparePassword } from "../hash.js";
+import { comparePassword, hashPassword } from "../hash.js";
 import { generateAccessToken, generateRefreshToken, verifyRefreshToken, AuthenticatedRequest } from "../auth.js";
 
 export async function login(req: AuthenticatedRequest, res: Response) {
@@ -118,6 +118,42 @@ export async function me(req: AuthenticatedRequest, res: Response) {
     });
   } catch (error: any) {
     console.error("Get user error:", error);
+    return res.status(500).json({ error: "Internal server error" });
+  }
+}
+
+export async function changePassword(req: AuthenticatedRequest, res: Response) {
+  try {
+    if (!req.user) {
+      return res.status(401).json({ error: "Unauthorized" });
+    }
+    const { currentPassword, newPassword } = req.body;
+    if (!currentPassword || !newPassword) {
+      return res.status(400).json({ error: "Current password and new password are required" });
+    }
+
+    const user = await prisma.user.findUnique({
+      where: { id: req.user.id }
+    });
+
+    if (!user || !comparePassword(currentPassword, user.passwordHash)) {
+      return res.status(400).json({ error: "Invalid current password" });
+    }
+
+    if (newPassword.length < 6) {
+      return res.status(400).json({ error: "New password must be at least 6 characters long" });
+    }
+
+    await prisma.user.update({
+      where: { id: req.user.id },
+      data: {
+        passwordHash: hashPassword(newPassword)
+      }
+    });
+
+    return res.json({ message: "Password updated successfully" });
+  } catch (error: any) {
+    console.error("Change password error:", error);
     return res.status(500).json({ error: "Internal server error" });
   }
 }
