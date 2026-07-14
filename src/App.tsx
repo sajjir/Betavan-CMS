@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from "react";
-import { HashRouter, Routes, Route, Link, useParams, useNavigate, Navigate } from "react-router-dom";
+import { BrowserRouter, Routes, Route, Link, useParams, useNavigate, Navigate } from "react-router-dom";
 import { 
   Plus, 
   Settings, 
@@ -19,7 +19,12 @@ import {
   Eye,
   Filter,
   RefreshCw,
-  Clock
+  Clock,
+  Copy,
+  BookOpen,
+  Video,
+  Cpu,
+  ExternalLink
 } from "lucide-react";
 import { Post, Category, Tag, Page } from "./types.js";
 import { Navbar } from "./components/Navbar.js";
@@ -44,6 +49,7 @@ function BlogHome() {
   const [loading, setLoading] = useState(true);
   const [selectedCategory, setSelectedCategory] = useState<string>("");
   const [selectedTag, setSelectedTag] = useState<string>("");
+  const [copiedPostId, setCopiedPostId] = useState<string | null>(null);
 
   useEffect(() => {
     async function loadData() {
@@ -80,155 +86,615 @@ function BlogHome() {
     loadData();
   }, [selectedCategory, selectedTag]);
 
+  const handleQuickCopy = async (e: React.MouseEvent, postId: string, code: string) => {
+    e.preventDefault();
+    e.stopPropagation();
+    try {
+      await navigator.clipboard.writeText(code);
+      setCopiedPostId(postId);
+      setTimeout(() => setCopiedPostId(null), 2000);
+    } catch (err) {
+      console.error("Failed to copy code: ", err);
+    }
+  };
+
+  const scrollToGrid = () => {
+    const el = document.getElementById("toolbench-grid");
+    if (el) {
+      el.scrollIntoView({ behavior: "smooth" });
+    }
+  };
+
+  const handleCategorySelect = (slug: string) => {
+    setSelectedCategory(slug);
+    setSelectedTag("");
+    setTimeout(scrollToGrid, 50);
+  };
+
+  // Find a post to feature in our main hero section
+  // Prefer a post with code snippets, downloads, or videos. If none, take the first post.
+  const featuredPost = posts.find(p => 
+    p.blocks?.some(b => b.type === "CODE_SNIPPET" || b.type === "DOWNLOAD_BOX")
+  ) || posts[0];
+
+  // Extracts first code block or download box from a post
+  const getFeaturedAsset = (post: Post) => {
+    if (!post || !post.blocks) return null;
+    const codeBlock = post.blocks.find(b => b.type === "CODE_SNIPPET");
+    if (codeBlock) return { type: "CODE", data: codeBlock.data, blockId: codeBlock.id };
+    const downloadBlock = post.blocks.find(b => b.type === "DOWNLOAD_BOX");
+    if (downloadBlock) return { type: "DOWNLOAD", data: downloadBlock.data, blockId: downloadBlock.id };
+    return null;
+  };
+
+  const featuredAsset = featuredPost ? getFeaturedAsset(featuredPost) : null;
+
   return (
-    <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-10">
-      {/* Hero Banner */}
-      <div className="text-center max-w-2xl mx-auto mb-12 space-y-4">
-        <h1 className="text-4xl font-extrabold text-neutral-950 font-display tracking-tight sm:text-5xl">
-          Empowering Iranian <span className="text-brand">Business & AI</span>
-        </h1>
-        <p className="text-lg text-neutral-500 font-medium">
-          A minimalist platform delivering highly-focused AI insights, copyable code frameworks, and downloadable development assets.
-        </p>
-      </div>
-
-      {/* Category Tabs */}
-      <div className="border-b border-neutral-200 mb-8 overflow-x-auto">
-        <div className="flex space-x-6 pb-px">
-          <button
-            onClick={() => setSelectedCategory("")}
-            className={`py-3.5 text-sm font-semibold border-b-2 transition-colors whitespace-nowrap cursor-pointer ${!selectedCategory ? "border-brand text-brand" : "border-transparent text-neutral-500 hover:text-neutral-800"}`}
-          >
-            All Articles
-          </button>
-          {categories.map((cat) => (
+    <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-10 space-y-16">
+      
+      {/* 1. HERO SECTION (Split layouts with Live Anchor) */}
+      <section className="grid grid-cols-1 lg:grid-cols-12 gap-10 items-center bg-white rounded-3xl border border-neutral-200 p-8 sm:p-10 shadow-xs relative overflow-hidden">
+        {/* Subtle engineering background grid */}
+        <div className="absolute inset-0 bg-[linear-gradient(to_right,#8080800a_1px,transparent_1px),linear-gradient(to_bottom,#8080800a_1px,transparent_1px)] bg-[size:24px_24px] pointer-events-none" />
+        
+        <div className="lg:col-span-5 space-y-5 relative z-10">
+          <span className="inline-flex items-center px-2.5 py-1 rounded-md text-[10px] font-mono font-bold tracking-wider bg-brand-light text-brand uppercase">
+            // Technical Workshop & Snippets
+          </span>
+          <h1 className="text-3xl sm:text-4xl font-extrabold text-neutral-950 font-display tracking-tight leading-tight">
+            Stop starting from scratch. Grab <span className="text-brand">working code</span> & assets.
+          </h1>
+          <p className="text-sm sm:text-base text-neutral-600 leading-relaxed font-sans font-medium">
+            Betavan.ir is a zero-friction playground for web automation, custom AI integrations, and high-performance WordPress snippet files. Built for builders who need things working in seconds.
+          </p>
+          <div className="flex flex-wrap gap-3 pt-2">
             <button
-              key={cat.id}
-              onClick={() => setSelectedCategory(cat.slug)}
-              className={`py-3.5 text-sm font-semibold border-b-2 transition-colors whitespace-nowrap cursor-pointer ${selectedCategory === cat.slug ? "border-brand text-brand" : "border-transparent text-neutral-500 hover:text-neutral-800"}`}
+              onClick={scrollToGrid}
+              className="px-4.5 py-2.5 rounded-lg bg-neutral-900 hover:bg-neutral-850 text-white font-bold text-xs tracking-wide transition-all shadow-sm cursor-pointer"
             >
-              {cat.name}
+              Browse Toolbench
             </button>
-          ))}
+            <a
+              href="#categories-browse"
+              onClick={(e) => {
+                e.preventDefault();
+                document.getElementById("categories-browse")?.scrollIntoView({ behavior: "smooth" });
+              }}
+              className="px-4.5 py-2.5 rounded-lg border border-neutral-200 hover:border-neutral-300 text-neutral-700 font-bold text-xs tracking-wide transition-all bg-white cursor-pointer"
+            >
+              Explore Pillars
+            </a>
+          </div>
         </div>
-      </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-4 gap-8">
-        {/* Main Post Grid */}
-        <div className="lg:col-span-3">
-          {loading ? (
-            <div className="py-24 text-center text-neutral-500 font-medium animate-pulse">
-              Retrieving latest publications...
-            </div>
-          ) : posts.length === 0 ? (
-            <div className="py-20 text-center border border-dashed border-neutral-200 bg-white rounded-2xl p-8">
-              <p className="text-sm text-neutral-500 font-medium">No published articles match the selection.</p>
-              {(selectedCategory || selectedTag) && (
-                <button
-                  onClick={() => {
-                    setSelectedCategory("");
-                    setSelectedTag("");
-                  }}
-                  className="mt-4 text-xs font-semibold text-brand hover:underline"
-                >
-                  Clear filters
-                </button>
-              )}
-            </div>
-          ) : (
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-              {posts.map((post) => {
-                const coverUrl = post.coverImage || "https://images.unsplash.com/photo-1517694712202-14dd9538aa97";
-                const formattedDate = post.publishedAt 
-                  ? new Date(post.publishedAt).toLocaleDateString("en-US", { year: "numeric", month: "long", day: "numeric" })
-                  : "Draft";
+        {/* Hero Visual Anchor */}
+        <div className="lg:col-span-7 relative z-10 w-full">
+          {featuredPost ? (
+            <div className="bg-neutral-950 rounded-2xl border border-neutral-800 shadow-xl overflow-hidden">
+              {/* Fake IDE Header */}
+              <div className="flex items-center justify-between px-4 py-3 bg-neutral-900 border-b border-neutral-800">
+                <div className="flex items-center space-x-2">
+                  <div className="w-2.5 h-2.5 rounded-full bg-red-500/80" />
+                  <div className="w-2.5 h-2.5 rounded-full bg-yellow-500/80" />
+                  <div className="w-2.5 h-2.5 rounded-full bg-emerald-500/80" />
+                  <span className="text-[10px] font-mono text-neutral-500 ml-2 tracking-tight">
+                    {featuredPost.slug}.{featuredAsset?.type === "CODE" ? (featuredAsset.data.language || "php") : "asset"}
+                  </span>
+                </div>
+                <span className="text-[10px] font-mono font-bold bg-brand/10 text-brand px-2 py-0.5 rounded border border-brand/20">
+                  Featured Asset
+                </span>
+              </div>
 
-                return (
-                  <article key={post.id} className="group bg-white rounded-2xl border border-neutral-200 hover:border-brand/30 hover:shadow-lg transition-all overflow-hidden flex flex-col h-full">
-                    <Link to={`/blog/${post.slug}`} className="relative block aspect-video overflow-hidden bg-neutral-100">
-                      <img 
-                        src={coverUrl} 
-                        alt={post.title} 
-                        className="w-full h-full object-cover group-hover:scale-102 transition-transform duration-300"
-                        referrerPolicy="no-referrer"
-                      />
-                      {post.category && (
-                        <span className="absolute top-4 left-4 bg-white/90 backdrop-blur-xs text-xs font-semibold px-3 py-1 rounded-full text-brand shadow-sm">
-                          {post.category.name}
-                        </span>
-                      )}
-                    </Link>
-                    <div className="p-5 flex-1 flex flex-col justify-between">
-                      <div className="space-y-2.5">
-                        <div className="flex items-center space-x-3.5 text-[11px] font-mono text-neutral-400">
-                          <span className="flex items-center">
-                            <Clock className="w-3.5 h-3.5 mr-1" /> {formattedDate}
-                          </span>
-                        </div>
-                        <h3 className="text-lg font-bold text-neutral-900 group-hover:text-brand transition-colors tracking-tight line-clamp-2">
-                          <Link to={`/blog/${post.slug}`}>{post.title}</Link>
-                        </h3>
-                        {post.excerpt && (
-                          <p className="text-neutral-500 text-sm line-clamp-3 leading-relaxed">
-                            {post.excerpt}
-                          </p>
+              {/* IDE Content */}
+              <div className="p-5 sm:p-6 space-y-4">
+                <div className="space-y-1.5">
+                  <span className="text-[10px] font-mono font-semibold text-neutral-500 uppercase tracking-wider block">
+                    {featuredPost.category?.name || "Snippet"}
+                  </span>
+                  <h3 className="text-base sm:text-lg font-bold text-neutral-100 font-sans tracking-tight leading-snug hover:text-brand transition-colors">
+                    <Link to={`/blog/${featuredPost.slug}`}>{featuredPost.title}</Link>
+                  </h3>
+                  <p className="text-xs text-neutral-400 font-medium leading-relaxed line-clamp-2">
+                    {featuredPost.excerpt || "Production snippet ready to deploy into your custom setups."}
+                  </p>
+                </div>
+
+                {/* Render the core snippet preview */}
+                {featuredAsset?.type === "CODE" ? (
+                  <div className="rounded-lg bg-neutral-900 border border-neutral-800 p-4 relative group">
+                    <div className="flex items-center justify-between text-[10px] font-mono text-neutral-500 mb-2 border-b border-neutral-850 pb-2">
+                      <span>Source language: {featuredAsset.data.language || "typescript"}</span>
+                      <button
+                        onClick={(e) => handleQuickCopy(e, "featured-hero", featuredAsset.data.code)}
+                        className="flex items-center space-x-1 hover:text-neutral-200 transition-colors bg-neutral-950/50 px-2 py-1 rounded"
+                      >
+                        {copiedPostId === "featured-hero" ? (
+                          <>
+                            <Check className="w-3 h-3 text-emerald-400" />
+                            <span className="text-emerald-400">Copied!</span>
+                          </>
+                        ) : (
+                          <>
+                            <Copy className="w-3 h-3" />
+                            <span>Copy Snippet</span>
+                          </>
                         )}
+                      </button>
+                    </div>
+                    <pre className="text-xs font-mono text-neutral-300 overflow-x-auto leading-relaxed max-h-[160px] scrollbar-thin">
+                      <code>{featuredAsset.data.code}</code>
+                    </pre>
+                  </div>
+                ) : featuredAsset?.type === "DOWNLOAD" ? (
+                  <div className="p-4 rounded-lg bg-neutral-900 border border-neutral-800 flex flex-col sm:flex-row items-center justify-between gap-4">
+                    <div className="flex items-start space-x-3.5">
+                      <div className="p-2.5 rounded bg-brand/10 text-brand">
+                        <FileDown className="w-5 h-5" />
                       </div>
-                      <div className="mt-5 pt-4 border-t border-neutral-100 flex items-center justify-between">
-                        <div className="flex flex-wrap gap-1">
-                          {post.tags?.slice(0, 2).map((tag) => (
-                            <span key={tag.id} className="text-[10px] font-mono text-neutral-400 bg-neutral-100 px-2 py-0.5 rounded">
-                              #{tag.name}
-                            </span>
-                          ))}
-                        </div>
-                        <Link to={`/blog/${post.slug}`} className="text-xs font-bold text-neutral-950 hover:text-brand flex items-center">
-                          Read Article <ChevronRight className="w-4 h-4 ml-0.5" />
-                        </Link>
+                      <div>
+                        <span className="text-xs font-semibold text-neutral-100 block">
+                          {featuredAsset.data.filename || "utility-asset.zip"}
+                        </span>
+                        <span className="text-[10px] font-mono text-neutral-500">
+                          Size: {featuredAsset.data.size || "Free Download"} • {featuredAsset.data.downloads || 0} downloads
+                        </span>
                       </div>
                     </div>
-                  </article>
-                );
-              })}
+                    <a
+                      href={featuredAsset.blockId ? `/downloads/${featuredAsset.blockId}` : (featuredAsset.data.link || "#")}
+                      className="px-4 py-2 bg-brand hover:bg-brand-hover text-white text-xs font-bold rounded-lg transition-colors shadow-sm inline-flex items-center shrink-0 cursor-pointer"
+                    >
+                      <FileDown className="w-3.5 h-3.5 mr-1.5" /> Download Asset
+                    </a>
+                  </div>
+                ) : (
+                  <div className="p-8 text-center rounded-lg border border-dashed border-neutral-800 bg-neutral-900/50">
+                    <Link
+                      to={`/blog/${featuredPost.slug}`}
+                      className="inline-flex items-center space-x-2 text-xs text-brand font-bold hover:underline"
+                    >
+                      <span>Explore this tutorial series</span>
+                      <ChevronRight className="w-4 h-4" />
+                    </Link>
+                  </div>
+                )}
+              </div>
+            </div>
+          ) : (
+            /* Standalone Mock Preview if DB is unseeded or posts is empty */
+            <div className="bg-neutral-950 rounded-2xl border border-neutral-800 shadow-xl overflow-hidden">
+              <div className="flex items-center justify-between px-4 py-3 bg-neutral-900 border-b border-neutral-800">
+                <div className="flex items-center space-x-2">
+                  <div className="w-2.5 h-2.5 rounded-full bg-red-500/80" />
+                  <div className="w-2.5 h-2.5 rounded-full bg-yellow-500/80" />
+                  <div className="w-2.5 h-2.5 rounded-full bg-emerald-500/80" />
+                  <span className="text-[10px] font-mono text-neutral-500 ml-2 tracking-tight">wp-clean-blocks.php</span>
+                </div>
+                <span className="text-[10px] font-mono font-bold bg-brand/10 text-brand px-2 py-0.5 rounded border border-brand/20">
+                  Demo Snippet
+                </span>
+              </div>
+              <div className="p-5 sm:p-6 space-y-4">
+                <div className="space-y-1.5">
+                  <span className="text-[10px] font-mono font-semibold text-neutral-500 uppercase tracking-wider block">
+                    WordPress Optimization
+                  </span>
+                  <h3 className="text-base sm:text-lg font-bold text-neutral-100 font-sans tracking-tight leading-snug">
+                    Dequeue Gutenberg CSS blocks on frontend
+                  </h3>
+                  <p className="text-xs text-neutral-400 font-medium leading-relaxed">
+                    Instantly speed up WordPress sites by preventing Gutenberg assets from loading on non-block landing pages.
+                  </p>
+                </div>
+                <div className="rounded-lg bg-neutral-900 border border-neutral-800 p-4 relative group">
+                  <div className="flex items-center justify-between text-[10px] font-mono text-neutral-500 mb-2 border-b border-neutral-850 pb-2">
+                    <span>php</span>
+                    <button
+                      onClick={(e) => handleQuickCopy(e, "demo-hero", `// Dequeue default Gutenberg block styles\nadd_action('wp_enqueue_scripts', function() {\n    wp_dequeue_style('wp-block-library');\n    wp_dequeue_style('wp-block-library-theme');\n}, 100);`)}
+                      className="flex items-center space-x-1 hover:text-neutral-200 transition-colors bg-neutral-950/50 px-2 py-1 rounded"
+                    >
+                      {copiedPostId === "demo-hero" ? (
+                        <>
+                          <Check className="w-3 h-3 text-emerald-400" />
+                          <span className="text-emerald-400">Copied!</span>
+                        </>
+                      ) : (
+                        <>
+                          <Copy className="w-3 h-3" />
+                          <span>Copy Snippet</span>
+                        </>
+                      )}
+                    </button>
+                  </div>
+                  <pre className="text-xs font-mono text-neutral-300 overflow-x-auto leading-relaxed max-h-[160px] scrollbar-thin">
+                    <code>{`// Dequeue default Gutenberg block styles
+add_action('wp_enqueue_scripts', function() {
+    wp_dequeue_style('wp-block-library');
+    wp_dequeue_style('wp-block-library-theme');
+}, 100);`}</code>
+                  </pre>
+                </div>
+              </div>
             </div>
           )}
         </div>
+      </section>
 
-        {/* Sidebar Widgets */}
-        <div className="space-y-6">
-          {/* Tag Filter Widget */}
-          <div className="bg-white rounded-2xl border border-neutral-200 p-5 space-y-4">
-            <h4 className="text-sm font-bold text-neutral-900 flex items-center">
-              <Filter className="w-4 h-4 mr-1.5 text-brand" /> Filter by Tag
-            </h4>
-            <div className="flex flex-wrap gap-1.5">
-              <button
-                onClick={() => setSelectedTag("")}
-                className={`text-xs font-semibold px-2.5 py-1 rounded-lg transition-colors cursor-pointer ${!selectedTag ? "bg-brand text-white" : "bg-neutral-100 text-neutral-600 hover:bg-neutral-250"}`}
-              >
-                All Tags
-              </button>
-              {tags.map((tag) => (
-                <button
-                  key={tag.id}
-                  onClick={() => setSelectedTag(tag.slug)}
-                  className={`text-xs font-semibold px-2.5 py-1 rounded-lg transition-colors cursor-pointer ${selectedTag === tag.slug ? "bg-brand text-white" : "bg-neutral-100 text-neutral-600 hover:bg-neutral-250"}`}
-                >
-                  #{tag.name}
-                </button>
-              ))}
+      {/* 2. CATEGORY BROWSE SECTION (Bento pillars layout) */}
+      <section id="categories-browse" className="space-y-6 pt-4 scroll-mt-20">
+        <div className="space-y-1.5 text-center max-w-2xl mx-auto">
+          <span className="text-[10px] font-mono font-bold tracking-widest text-neutral-400 uppercase">
+            // Core Toolbench Pillars
+          </span>
+          <h2 className="text-2xl sm:text-3xl font-extrabold text-neutral-950 font-display tracking-tight">
+            Select Your Workspace
+          </h2>
+          <p className="text-xs sm:text-sm text-neutral-500 font-medium">
+            We organize our snippets, files, and video guides into three high-focus functional disciplines.
+          </p>
+        </div>
+
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+          {/* AI Category */}
+          <div 
+            onClick={() => handleCategorySelect("ai-technology")}
+            className={`group rounded-2xl border p-6 space-y-4 hover:border-brand/40 transition-all cursor-pointer bg-white relative overflow-hidden flex flex-col justify-between ${selectedCategory === "ai-technology" ? "ring-2 ring-brand border-brand" : "border-neutral-200"}`}
+          >
+            <div className="space-y-3">
+              <div className="w-10 h-10 rounded-lg bg-neutral-100 flex items-center justify-center text-neutral-700 group-hover:bg-brand-light group-hover:text-brand transition-colors">
+                <Cpu className="w-5 h-5" />
+              </div>
+              <div>
+                <h3 className="text-base font-bold text-neutral-950 font-display tracking-tight flex items-center">
+                  AI & Technology
+                  <ChevronRight className="w-4 h-4 ml-1 opacity-0 group-hover:opacity-100 group-hover:translate-x-0.5 transition-all" />
+                </h3>
+                <p className="text-xs text-neutral-500 font-medium mt-1 leading-relaxed">
+                  API connections, automation scripts, and LLM prompt layouts to supercharge your systems.
+                </p>
+              </div>
+            </div>
+            <div className="pt-2 text-[11px] font-mono text-brand font-bold uppercase tracking-wider">
+              Browse AI Snippets →
             </div>
           </div>
 
-          {/* Quick Info */}
-          <div className="bg-neutral-900 text-neutral-100 rounded-2xl p-5 space-y-3 shadow-md">
-            <h4 className="text-sm font-bold font-display tracking-tight text-white">About Betavan CMS</h4>
-            <p className="text-xs text-neutral-400 leading-relaxed">
-              Designed as a minimal content-hub focusing on embedding Aparat video tutorials, providing downloadable code frameworks with zero signup friction.
-            </p>
+          {/* Business Category */}
+          <div 
+            onClick={() => handleCategorySelect("business-entrepreneurship")}
+            className={`group rounded-2xl border p-6 space-y-4 hover:border-brand/40 transition-all cursor-pointer bg-white relative overflow-hidden flex flex-col justify-between ${selectedCategory === "business-entrepreneurship" ? "ring-2 ring-brand border-brand" : "border-neutral-200"}`}
+          >
+            <div className="space-y-3">
+              <div className="w-10 h-10 rounded-lg bg-neutral-100 flex items-center justify-center text-neutral-700 group-hover:bg-brand-light group-hover:text-brand transition-colors">
+                <Code className="w-5 h-5" />
+              </div>
+              <div>
+                <h3 className="text-base font-bold text-neutral-950 font-display tracking-tight flex items-center">
+                  Business & Entrepreneurship
+                  <ChevronRight className="w-4 h-4 ml-1 opacity-0 group-hover:opacity-100 group-hover:translate-x-0.5 transition-all" />
+                </h3>
+                <p className="text-xs text-neutral-500 font-medium mt-1 leading-relaxed">
+                  WordPress snippets, micro-SaaS structures, and clean code configurations for developers.
+                </p>
+              </div>
+            </div>
+            <div className="pt-2 text-[11px] font-mono text-brand font-bold uppercase tracking-wider">
+              Browse business snippets →
+            </div>
+          </div>
+
+          {/* Marketing Category */}
+          <div 
+            onClick={() => handleCategorySelect("marketing")}
+            className={`group rounded-2xl border p-6 space-y-4 hover:border-brand/40 transition-all cursor-pointer bg-white relative overflow-hidden flex flex-col justify-between ${selectedCategory === "marketing" ? "ring-2 ring-brand border-brand" : "border-neutral-200"}`}
+          >
+            <div className="space-y-3">
+              <div className="w-10 h-10 rounded-lg bg-neutral-100 flex items-center justify-center text-neutral-700 group-hover:bg-brand-light group-hover:text-brand transition-colors">
+                <Video className="w-5 h-5" />
+              </div>
+              <div>
+                <h3 className="text-base font-bold text-neutral-950 font-display tracking-tight flex items-center">
+                  Marketing & Automation
+                  <ChevronRight className="w-4 h-4 ml-1 opacity-0 group-hover:opacity-100 group-hover:translate-x-0.5 transition-all" />
+                </h3>
+                <p className="text-xs text-neutral-500 font-medium mt-1 leading-relaxed">
+                  Analytics triggers, utility landing scripts, and SEO configurations to drive performance.
+                </p>
+              </div>
+            </div>
+            <div className="pt-2 text-[11px] font-mono text-brand font-bold uppercase tracking-wider">
+              Browse marketing assets →
+            </div>
           </div>
         </div>
-      </div>
+      </section>
+
+      {/* 3. LATEST POSTS & SNIPPETS LIST (The active Bench) */}
+      <section id="toolbench-grid" className="scroll-mt-20 space-y-8">
+        
+        {/* Filter Toolbar (Tabs structure) */}
+        <div className="border-b border-neutral-200 pb-px flex flex-col sm:flex-row sm:items-center justify-between gap-4 overflow-x-auto">
+          <div className="flex space-x-6">
+            <button
+              onClick={() => { setSelectedCategory(""); setSelectedTag(""); }}
+              className={`py-3.5 text-xs sm:text-sm font-bold border-b-2 transition-colors whitespace-nowrap cursor-pointer flex items-center space-x-1.5 ${!selectedCategory && !selectedTag ? "border-neutral-900 text-neutral-950" : "border-transparent text-neutral-400 hover:text-neutral-700"}`}
+            >
+              <span>All Publications</span>
+              <span className="text-[10px] font-mono bg-neutral-100 text-neutral-500 px-1.5 py-0.5 rounded">
+                {posts.length}
+              </span>
+            </button>
+            
+            {categories.map((cat) => {
+              const active = selectedCategory === cat.slug;
+              const matches = posts.filter(p => p.category?.slug === cat.slug);
+              return (
+                <button
+                  key={cat.id}
+                  onClick={() => handleCategorySelect(cat.slug)}
+                  className={`py-3.5 text-xs sm:text-sm font-bold border-b-2 transition-colors whitespace-nowrap cursor-pointer flex items-center space-x-1.5 ${active ? "border-brand text-brand" : "border-transparent text-neutral-400 hover:text-neutral-700"}`}
+                >
+                  <span>{cat.name}</span>
+                  <span className={`text-[10px] font-mono px-1.5 py-0.5 rounded ${active ? "bg-brand/10 text-brand" : "bg-neutral-100 text-neutral-400"}`}>
+                    {matches.length}
+                  </span>
+                </button>
+              );
+            })}
+          </div>
+
+          {(selectedCategory || selectedTag) && (
+            <button
+              onClick={() => { setSelectedCategory(""); setSelectedTag(""); }}
+              className="text-xs font-mono text-neutral-500 hover:text-brand cursor-pointer whitespace-nowrap"
+            >
+              [ Clear Filters ]
+            </button>
+          )}
+        </div>
+
+        {/* Content Layout Grid */}
+        <div className="grid grid-cols-1 lg:grid-cols-4 gap-8">
+          
+          {/* Main Listings */}
+          <div className="lg:col-span-3">
+            {loading ? (
+              <div className="py-24 text-center text-neutral-400 font-mono text-sm animate-pulse flex items-center justify-center space-x-2">
+                <RefreshCw className="w-4 h-4 animate-spin text-neutral-400" />
+                <span>Reading toolbench state...</span>
+              </div>
+            ) : posts.length === 0 ? (
+              <div className="py-20 text-center border border-dashed border-neutral-200 bg-white rounded-2xl p-8 space-y-3">
+                <p className="text-sm text-neutral-500 font-medium">No active assets found under the selected filter.</p>
+                <button
+                  onClick={() => { setSelectedCategory(""); setSelectedTag(""); }}
+                  className="px-3.5 py-1.5 text-xs font-semibold text-white bg-neutral-900 rounded-lg hover:bg-neutral-850"
+                >
+                  Show all publications
+                </button>
+              </div>
+            ) : (
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                {posts.map((post) => {
+                  const hasVideo = post.blocks?.some(b => b.type === "APARAT_EMBED");
+                  const hasCode = post.blocks?.some(b => b.type === "CODE_SNIPPET");
+                  const hasDownload = post.blocks?.some(b => b.type === "DOWNLOAD_BOX");
+
+                  const codeBlock = post.blocks?.find(b => b.type === "CODE_SNIPPET");
+                  const downloadBlock = post.blocks?.find(b => b.type === "DOWNLOAD_BOX");
+
+                  const formattedDate = post.publishedAt 
+                    ? new Date(post.publishedAt).toLocaleDateString("en-US", { year: "numeric", month: "long" })
+                    : "Draft";
+
+                  return (
+                    <article key={post.id} className="group bg-white rounded-2xl border border-neutral-200 hover:border-brand/40 hover:shadow-md transition-all flex flex-col h-full overflow-hidden">
+                      
+                      {/* CARD COVER / THE SIGNATURE ELEMENT (Design Risk) */}
+                      <div className="relative aspect-video w-full border-b border-neutral-100 overflow-hidden bg-neutral-950">
+                        {hasCode && codeBlock ? (
+                          /* Miniature Interactive Code Block Editor */
+                          <div className="w-full h-full flex flex-col justify-between">
+                            <div className="flex items-center justify-between px-3.5 py-2 bg-neutral-900 border-b border-neutral-800">
+                              <div className="flex items-center space-x-1.5">
+                                <div className="w-2 h-2 rounded-full bg-neutral-700" />
+                                <div className="w-2 h-2 rounded-full bg-neutral-700" />
+                                <span className="text-[9px] font-mono text-neutral-500 ml-1">
+                                  {codeBlock.data.language || "typescript"}
+                                </span>
+                              </div>
+                              <button
+                                onClick={(e) => handleQuickCopy(e, post.id, codeBlock.data.code)}
+                                className="flex items-center text-[9px] font-mono text-neutral-400 hover:text-white transition-colors bg-neutral-950/50 py-0.5 px-1.5 rounded"
+                                title="Copy snippet to clipboard"
+                              >
+                                {copiedPostId === post.id ? (
+                                  <>
+                                    <Check className="w-2.5 h-2.5 mr-1 text-emerald-400" />
+                                    <span className="text-emerald-400">Copied!</span>
+                                  </>
+                                ) : (
+                                  <>
+                                    <Copy className="w-2.5 h-2.5 mr-1" />
+                                    <span>Copy</span>
+                                  </>
+                                )}
+                              </button>
+                            </div>
+                            <pre className="p-3.5 overflow-hidden text-[10px] leading-relaxed font-mono text-neutral-300 flex-1 select-none">
+                              <code>{codeBlock.data.code}</code>
+                            </pre>
+                            <div className="p-2 bg-neutral-900/60 text-center border-t border-neutral-850">
+                              <Link to={`/blog/${post.slug}`} className="text-[9px] font-mono font-bold text-neutral-400 hover:text-brand transition-colors">
+                                [ View Complete File Snippet ]
+                              </Link>
+                            </div>
+                          </div>
+                        ) : hasDownload && downloadBlock ? (
+                          /* Miniature Live Download Card */
+                          <div className="w-full h-full flex flex-col justify-between p-4 bg-[radial-gradient(#262626_1px,transparent_1px)] [background-size:16px_16px] bg-neutral-950">
+                            <div className="flex items-center justify-between">
+                              <span className="text-[9px] font-mono bg-emerald-500/10 text-emerald-400 px-2 py-0.5 rounded border border-emerald-500/20">
+                                FREE DOWNLOAD
+                              </span>
+                              <span className="text-[9px] font-mono text-neutral-500">
+                                {downloadBlock.data.size || "Zip File"}
+                              </span>
+                            </div>
+                            <div className="text-center space-y-1.5 my-2">
+                              <h4 className="text-xs font-bold text-neutral-100 font-sans tracking-tight leading-snug line-clamp-1 px-2">
+                                {downloadBlock.data.filename || "asset-file.zip"}
+                              </h4>
+                              <p className="text-[9px] font-mono text-neutral-500">
+                                stats: {downloadBlock.data.downloads || 0} downloads
+                              </p>
+                            </div>
+                            <a
+                              href={downloadBlock.id ? `/downloads/${downloadBlock.id}` : (downloadBlock.data.link || "#")}
+                              onClick={(e) => e.stopPropagation()}
+                              className="w-full py-1.5 bg-neutral-900 hover:bg-neutral-850 border border-neutral-800 text-white font-mono text-[10px] font-bold rounded-md transition-colors text-center inline-flex items-center justify-center cursor-pointer"
+                            >
+                              <FileDown className="w-3 h-3 mr-1" /> Trigger Free Download
+                            </a>
+                          </div>
+                        ) : hasVideo ? (
+                          /* Interactive Video Card preview */
+                          <Link to={`/blog/${post.slug}`} className="block w-full h-full relative group">
+                            <img 
+                              src={post.coverImage || "https://images.unsplash.com/photo-1517694712202-14dd9538aa97"} 
+                              alt={post.title} 
+                              className="w-full h-full object-cover opacity-60 group-hover:scale-101 transition-all duration-300"
+                              referrerPolicy="no-referrer"
+                            />
+                            <div className="absolute inset-0 flex items-center justify-center">
+                              <div className="w-10 h-10 rounded-full bg-brand flex items-center justify-center text-white shadow-lg group-hover:scale-110 transition-transform duration-200">
+                                <Play className="w-5 h-5 fill-current ml-0.5" />
+                              </div>
+                            </div>
+                            <span className="absolute bottom-2 right-2 bg-neutral-950/80 text-[9px] font-mono px-2 py-0.5 rounded text-neutral-300">
+                              VIDEO TUTORIAL
+                            </span>
+                          </Link>
+                        ) : (
+                          /* Standard Image Fallback */
+                          <Link to={`/blog/${post.slug}`} className="block w-full h-full relative group">
+                            <img 
+                              src={post.coverImage || "https://images.unsplash.com/photo-1517694712202-14dd9538aa97"} 
+                              alt={post.title} 
+                              className="w-full h-full object-cover group-hover:scale-101 transition-all duration-300"
+                              referrerPolicy="no-referrer"
+                            />
+                          </Link>
+                        )}
+                      </div>
+
+                      {/* Content Area */}
+                      <div className="p-5 flex-1 flex flex-col justify-between space-y-4 bg-white">
+                        <div className="space-y-2">
+                          <div className="flex items-center justify-between text-[10px] font-mono text-neutral-400">
+                            <span className="font-bold text-neutral-500 uppercase tracking-wider">
+                              {post.category?.name || "Uncategorized"}
+                            </span>
+                            <span className="flex items-center">
+                              <Clock className="w-3 h-3 mr-1" /> {formattedDate}
+                            </span>
+                          </div>
+
+                          <h3 className="text-base font-bold text-neutral-950 group-hover:text-brand transition-colors tracking-tight line-clamp-2 leading-snug">
+                            <Link to={`/blog/${post.slug}`}>{post.title}</Link>
+                          </h3>
+
+                          {post.excerpt && (
+                            <p className="text-neutral-500 text-xs sm:text-sm line-clamp-2 leading-relaxed">
+                              {post.excerpt}
+                            </p>
+                          )}
+                        </div>
+
+                        {/* Capabilities Indicators */}
+                        <div className="pt-3.5 border-t border-neutral-100 flex items-center justify-between gap-2">
+                          <div className="flex items-center space-x-1">
+                            {hasCode && (
+                              <span className="inline-flex items-center text-[9px] font-mono bg-neutral-100 text-neutral-600 px-1.5 py-0.5 rounded" title="Includes copyable snippet">
+                                <Code className="w-3 h-3 mr-1 text-neutral-400" /> code
+                              </span>
+                            )}
+                            {hasDownload && (
+                              <span className="inline-flex items-center text-[9px] font-mono bg-neutral-100 text-neutral-600 px-1.5 py-0.5 rounded" title="Includes free download asset">
+                                <FileDown className="w-3 h-3 mr-1 text-neutral-400" /> file
+                              </span>
+                            )}
+                            {hasVideo && (
+                              <span className="inline-flex items-center text-[9px] font-mono bg-neutral-100 text-neutral-600 px-1.5 py-0.5 rounded" title="Includes video tutorial">
+                                <Play className="w-3 h-3 mr-1 text-neutral-400" /> video
+                              </span>
+                            )}
+                          </div>
+
+                          <Link to={`/blog/${post.slug}`} className="text-[10px] sm:text-xs font-bold text-neutral-950 hover:text-brand flex items-center transition-colors">
+                            <span>Get Asset</span>
+                            <ChevronRight className="w-3.5 h-3.5 ml-0.5" />
+                          </Link>
+                        </div>
+                      </div>
+                    </article>
+                  );
+                })}
+              </div>
+            )}
+          </div>
+
+          {/* Sidebar Filters */}
+          <div className="space-y-6">
+            
+            {/* Direct Tags Filter */}
+            <div className="bg-white rounded-2xl border border-neutral-200 p-5 space-y-4">
+              <h4 className="text-xs font-bold text-neutral-950 uppercase tracking-wider font-display flex items-center">
+                <Filter className="w-3.5 h-3.5 mr-1.5 text-brand" /> Filter by Tag
+              </h4>
+              <div className="flex flex-wrap gap-1.5">
+                <button
+                  onClick={() => setSelectedTag("")}
+                  className={`text-[10px] sm:text-xs font-semibold px-2.5 py-1 rounded-lg transition-colors cursor-pointer ${!selectedTag ? "bg-neutral-900 text-white" : "bg-neutral-50 text-neutral-600 hover:bg-neutral-100"}`}
+                >
+                  All Tags
+                </button>
+                {tags.map((tag) => {
+                  const active = selectedTag === tag.slug;
+                  return (
+                    <button
+                      key={tag.id}
+                      onClick={() => {
+                        setSelectedTag(active ? "" : tag.slug);
+                        setSelectedCategory("");
+                        setTimeout(scrollToGrid, 50);
+                      }}
+                      className={`text-[10px] sm:text-xs font-semibold px-2.5 py-1 rounded-lg transition-colors cursor-pointer ${active ? "bg-brand text-white" : "bg-neutral-50 text-neutral-600 hover:bg-neutral-100"}`}
+                    >
+                      #{tag.name}
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
+
+            {/* Quick About */}
+            <div className="bg-neutral-900 text-neutral-200 rounded-2xl p-5 space-y-4 border border-neutral-800">
+              <span className="text-[9px] font-mono text-brand font-bold uppercase tracking-widest block">// ABOUT THE WORKSHOP</span>
+              <p className="text-xs text-neutral-300 leading-relaxed font-sans">
+                Every resource on Betavan is thoroughly tested before seeding. Code blocks can be deployed immediately in WordPress, Node, and automation clients like n8n or Python.
+              </p>
+              <div className="pt-2 border-t border-neutral-800 flex items-center justify-between text-[10px] font-mono text-neutral-400">
+                <span>V2.0 Core Active</span>
+                <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
+              </div>
+            </div>
+
+          </div>
+        </div>
+      </section>
+
     </div>
   );
 }
@@ -241,6 +707,7 @@ function BlogPostView() {
   const [post, setPost] = useState<Post | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
+  const [relatedPosts, setRelatedPosts] = useState<Post[]>([]);
 
   useEffect(() => {
     async function loadPost() {
@@ -260,6 +727,46 @@ function BlogPostView() {
     }
     loadPost();
   }, [slug]);
+
+  useEffect(() => {
+    if (!post) return;
+    async function loadRelated() {
+      try {
+        const res = await fetch(`/api/posts?status=PUBLISHED`);
+        if (res.ok) {
+          const data = await res.json();
+          const allPosts: Post[] = data.posts || [];
+          // Filter: same category, exclude current post, limit to 3
+          const filtered = allPosts
+            .filter(p => p.categoryId === post.categoryId && p.id !== post.id)
+            .slice(0, 3);
+          setRelatedPosts(filtered);
+        }
+      } catch (err) {
+        console.error("Error loading related posts:", err);
+      }
+    }
+    loadRelated();
+  }, [post]);
+
+  const getReadingTime = (currentPost: Post): number => {
+    if (!currentPost || !currentPost.blocks) return 1;
+    let wordCount = 0;
+    currentPost.blocks.forEach(b => {
+      if (b.type === "RICH_TEXT" && b.data?.html) {
+        const text = b.data.html.replace(/<[^>]*>/g, " ");
+        wordCount += text.split(/\s+/).filter(Boolean).length;
+      } else if (b.type === "CODE_SNIPPET" && b.data?.code) {
+        wordCount += b.data.code.split(/\s+/).filter(Boolean).length;
+      }
+    });
+    wordCount += currentPost.title.split(/\s+/).filter(Boolean).length;
+    if (currentPost.excerpt) {
+      wordCount += currentPost.excerpt.split(/\s+/).filter(Boolean).length;
+    }
+    const min = Math.ceil(wordCount / 200);
+    return min < 1 ? 1 : min;
+  };
 
   if (loading) {
     return (
@@ -287,58 +794,119 @@ function BlogPostView() {
     ? new Date(post.publishedAt).toLocaleDateString("en-US", { year: "numeric", month: "long", day: "numeric" })
     : "Draft Mode";
 
+  const readingTime = getReadingTime(post);
+
   return (
-    <article className="max-w-3xl mx-auto px-4 sm:px-6 lg:px-8 py-10 space-y-8">
-      {/* Category & Tags */}
-      <div className="flex flex-wrap gap-2 items-center">
-        {post.category && (
-          <span className="bg-brand-light text-brand text-xs font-bold px-3 py-1 rounded-full">
-            {post.category.name}
-          </span>
-        )}
-        {post.tags?.map((tag) => (
-          <span key={tag.id} className="text-xs text-neutral-500 font-mono">
-            #{tag.name}
-          </span>
-        ))}
-      </div>
+    <div className="max-w-3xl mx-auto px-4 sm:px-6 lg:px-8 py-10 space-y-10">
+      
+      {/* Back to index link */}
+      <Link to="/" className="inline-flex items-center text-xs font-mono font-bold text-neutral-400 hover:text-neutral-700 transition-colors">
+        ← BACK TO TOOLBENCH
+      </Link>
 
-      {/* Title & Metadata */}
-      <div className="space-y-4">
-        <h1 className="text-3xl sm:text-4xl font-extrabold text-neutral-950 font-display tracking-tight leading-tight">
-          {post.title}
-        </h1>
-        <div className="flex items-center space-x-3.5 text-xs font-mono text-neutral-500">
-          <span>Published on {formattedDate}</span>
-          <span>•</span>
-          <span>By {post.author?.name || "Editor"}</span>
+      <article className="space-y-8">
+        {/* Category & Tags */}
+        <div className="flex flex-wrap gap-2 items-center">
+          {post.category && (
+            <span className="bg-brand-light text-brand text-xs font-bold px-3 py-1 rounded-full">
+              {post.category.name}
+            </span>
+          )}
+          {post.tags?.map((tag) => (
+            <span key={tag.id} className="text-xs text-neutral-500 font-mono">
+              #{tag.name}
+            </span>
+          ))}
         </div>
-      </div>
 
-      {/* Featured Image */}
-      <div className="aspect-video rounded-2xl overflow-hidden border border-neutral-200 shadow-md">
-        <img 
-          src={coverUrl} 
-          alt={post.title} 
-          className="w-full h-full object-cover"
-          referrerPolicy="no-referrer"
-        />
-      </div>
+        {/* Title & Metadata */}
+        <div className="space-y-4">
+          <h1 className="text-3xl sm:text-4xl font-extrabold text-neutral-950 font-display tracking-tight leading-tight">
+            {post.title}
+          </h1>
+          <div className="flex flex-wrap items-center gap-x-4 gap-y-1.5 text-xs font-mono text-neutral-500">
+            <span>Published on {formattedDate}</span>
+            <span>•</span>
+            <span>By {post.author?.name || "Editor"}</span>
+            <span>•</span>
+            <span className="flex items-center">
+              <Clock className="w-3.5 h-3.5 mr-1" /> {readingTime} min read
+            </span>
+          </div>
+        </div>
 
-      {/* Excerpt */}
-      {post.excerpt && (
-        <p className="text-lg text-neutral-600 font-medium italic border-l-4 border-brand pl-4 leading-relaxed my-6">
-          {post.excerpt}
-        </p>
+        {/* Featured Image */}
+        <div className="aspect-video rounded-2xl overflow-hidden border border-neutral-200 shadow-md">
+          <img 
+            src={coverUrl} 
+            alt={post.title} 
+            className="w-full h-full object-cover"
+            referrerPolicy="no-referrer"
+          />
+        </div>
+
+        {/* Excerpt */}
+        {post.excerpt && (
+          <p className="text-lg text-neutral-600 font-medium italic border-l-4 border-brand pl-4 leading-relaxed my-6">
+            {post.excerpt}
+          </p>
+        )}
+
+        {/* Article Blocks Loop */}
+        <div className="space-y-6 mt-8">
+          {post.blocks?.map((block) => (
+            <BlockRenderer key={block.id || block.order} block={block} />
+          ))}
+        </div>
+      </article>
+
+      {/* Related Posts Section */}
+      {relatedPosts.length > 0 && (
+        <section className="pt-10 border-t border-neutral-200 space-y-6">
+          <div className="space-y-1">
+            <span className="text-[9px] font-mono font-bold tracking-widest text-brand uppercase block">
+              // Related Publications
+            </span>
+            <h3 className="text-lg font-bold text-neutral-900 font-display tracking-tight">
+              Continue reading in {post.category?.name || "this category"}
+            </h3>
+          </div>
+
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-6">
+            {relatedPosts.map((related) => (
+              <Link 
+                key={related.id} 
+                to={`/blog/${related.slug}`}
+                className="group flex flex-col space-y-2.5 hover:opacity-95 block"
+              >
+                <div className="aspect-video rounded-xl overflow-hidden border border-neutral-200 bg-neutral-100 relative">
+                  <img 
+                    src={related.coverImage || "https://images.unsplash.com/photo-1517694712202-14dd9538aa97"} 
+                    alt={related.title} 
+                    className="w-full h-full object-cover group-hover:scale-101 transition-transform"
+                    referrerPolicy="no-referrer"
+                  />
+                  {related.blocks?.some(b => b.type === "CODE_SNIPPET") && (
+                    <span className="absolute top-2 right-2 bg-neutral-950/80 text-[8px] font-mono px-1.5 py-0.5 rounded text-neutral-300">
+                      CODE
+                    </span>
+                  )}
+                </div>
+                <div className="space-y-1">
+                  <span className="text-[10px] font-mono text-neutral-400">
+                    {related.publishedAt ? new Date(related.publishedAt).toLocaleDateString("en-US", { month: "short", year: "numeric" }) : "Draft"}
+                  </span>
+                  <h4 className="text-xs sm:text-sm font-bold text-neutral-900 group-hover:text-brand transition-colors line-clamp-2 leading-snug">
+                    {related.title}
+                  </h4>
+                </div>
+              </Link>
+            ))}
+          </div>
+        </section>
       )}
 
-      {/* Article Blocks Loop */}
-      <div className="space-y-6 mt-8">
-        {post.blocks?.map((block) => (
-          <BlockRenderer key={block.id || block.order} block={block} />
-        ))}
-      </div>
-    </article>
+    </div>
   );
 }
 
@@ -1099,7 +1667,7 @@ function EditPost() {
 // ==========================================
 export default function App() {
   return (
-    <HashRouter>
+    <BrowserRouter>
       <div className="min-h-screen bg-neutral-50 flex flex-col justify-between">
         <div>
           <Navbar />
@@ -1152,6 +1720,6 @@ export default function App() {
           </div>
         </footer>
       </div>
-    </HashRouter>
+    </BrowserRouter>
   );
 }
