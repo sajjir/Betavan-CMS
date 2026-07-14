@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from "react";
 import { Media } from "../types.js";
 import { X, Search, Upload, Folder, Tag, AlertCircle, Check, FileDown } from "lucide-react";
+import { useLanguage } from "../admin-i18n.js";
 
 interface MediaModalProps {
   onClose: () => void;
@@ -8,6 +9,7 @@ interface MediaModalProps {
 }
 
 export function MediaModal({ onClose, onSelect }: MediaModalProps) {
+  const { t } = useLanguage();
   const [mediaList, setMediaList] = useState<Media[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
@@ -107,10 +109,10 @@ export function MediaModal({ onClose, onSelect }: MediaModalProps) {
       <div className="bg-white rounded-2xl w-full max-w-4xl max-h-[85vh] overflow-hidden flex flex-col shadow-2xl border border-neutral-200">
         
         {/* Header */}
-        <div className="flex items-center justify-between p-5 border-b border-neutral-150">
+        <div className="flex items-center justify-between p-5 border-b border-neutral-150 text-start">
           <div>
-            <h3 className="text-lg font-bold text-neutral-900 tracking-tight">Media Library</h3>
-            <p className="text-xs text-neutral-500">Upload or select visual assets & downloadable files</p>
+            <h3 className="text-lg font-bold text-neutral-900 tracking-tight">{t("media_title")}</h3>
+            <p className="text-xs text-neutral-500">{t("media_subtitle")}</p>
           </div>
           <button 
             onClick={onClose} 
@@ -124,40 +126,40 @@ export function MediaModal({ onClose, onSelect }: MediaModalProps) {
         <div className="flex-1 overflow-hidden grid grid-cols-1 md:grid-cols-4">
           
           {/* Left Sidebar: Upload & Quick Filters */}
-          <div className="p-5 border-r border-neutral-150 bg-neutral-50 space-y-5 overflow-y-auto">
+          <div className="p-5 border-e border-neutral-150 bg-neutral-50 space-y-5 overflow-y-auto text-start">
             
             {/* Upload Area */}
             <div className="space-y-3">
-              <span className="text-xs font-bold text-neutral-700 uppercase tracking-wider block">Upload File</span>
+              <span className="text-xs font-bold text-neutral-700 uppercase tracking-wider block">{t("media_upload_title")}</span>
               
               <div className="space-y-2">
                 <input
                   type="text"
                   value={uploadFolder}
                   onChange={(e) => setUploadFolder(e.target.value)}
-                  placeholder="Folder (e.g. general)"
-                  className="w-full text-xs bg-white border border-neutral-200 rounded-md px-2 py-1.5 focus:outline-none focus:border-brand"
+                  placeholder={t("media_folder_placeholder")}
+                  className="w-full text-xs bg-white border border-neutral-200 rounded-md px-2 py-1.5 focus:outline-none focus:border-brand text-start"
                 />
                 <input
                   type="text"
                   value={uploadTags}
                   onChange={(e) => setUploadTags(e.target.value)}
-                  placeholder="Tags (comma-separated)"
-                  className="w-full text-xs bg-white border border-neutral-200 rounded-md px-2 py-1.5 focus:outline-none focus:border-brand"
+                  placeholder={t("media_tags_placeholder")}
+                  className="w-full text-xs bg-white border border-neutral-200 rounded-md px-2 py-1.5 focus:outline-none focus:border-brand text-start"
                 />
                 <input
                   type="text"
                   value={uploadAlt}
                   onChange={(e) => setUploadAlt(e.target.value)}
-                  placeholder="Alt Description"
-                  className="w-full text-xs bg-white border border-neutral-200 rounded-md px-2 py-1.5 focus:outline-none focus:border-brand"
+                  placeholder={t("media_alt_placeholder")}
+                  className="w-full text-xs bg-white border border-neutral-200 rounded-md px-2 py-1.5 focus:outline-none focus:border-brand text-start"
                 />
               </div>
 
               <label className="flex flex-col items-center justify-center border-2 border-dashed border-neutral-300 rounded-xl p-4 bg-white cursor-pointer hover:border-brand transition-colors text-center">
                 <Upload className="w-5 h-5 text-neutral-400 mb-1.5" />
                 <span className="text-xs font-semibold text-neutral-800">
-                  {uploading ? "Uploading..." : "Select & Upload"}
+                  {uploading ? t("media_upload_btn_uploading") : t("media_upload_btn_select")}
                 </span>
                 <span className="text-[10px] text-neutral-400 mt-0.5 font-mono">WebP, PNG, Zip</span>
                 <input
@@ -171,26 +173,26 @@ export function MediaModal({ onClose, onSelect }: MediaModalProps) {
 
             {/* Quick Filters */}
             <div className="space-y-2.5 pt-2 border-t border-neutral-200">
-              <span className="text-xs font-bold text-neutral-700 uppercase tracking-wider block">Filters</span>
+              <span className="text-xs font-bold text-neutral-700 uppercase tracking-wider block">{t("media_filter_title")}</span>
               
               <div className="space-y-1.5">
                 <button
                   onClick={() => setFolderFilter("")}
-                  className={`w-full text-left text-xs font-medium px-2 py-1.5 rounded-lg flex items-center transition-colors ${!folderFilter ? "bg-brand text-white" : "text-neutral-600 hover:bg-neutral-200"}`}
+                  className={`w-full text-start text-xs font-medium px-2 py-1.5 rounded-lg flex items-center transition-colors ${!folderFilter ? "bg-brand text-white" : "text-neutral-600 hover:bg-neutral-200"}`}
                 >
-                  <Folder className="w-3.5 h-3.5 mr-1.5" /> All Folders
+                  <Folder className="w-3.5 h-3.5 me-1.5" /> {t("media_folder_all")}
                 </button>
                 <button
                   onClick={() => setFolderFilter("general")}
-                  className={`w-full text-left text-xs font-medium px-2 py-1.5 rounded-lg flex items-center transition-colors ${folderFilter === "general" ? "bg-brand text-white" : "text-neutral-600 hover:bg-neutral-200"}`}
+                  className={`w-full text-start text-xs font-medium px-2 py-1.5 rounded-lg flex items-center transition-colors ${folderFilter === "general" ? "bg-brand text-white" : "text-neutral-600 hover:bg-neutral-200"}`}
                 >
-                  <Folder className="w-3.5 h-3.5 mr-1.5" /> General
+                  <Folder className="w-3.5 h-3.5 me-1.5" /> {t("media_folder_general")}
                 </button>
                 <button
                   onClick={() => setFolderFilter("downloads")}
-                  className={`w-full text-left text-xs font-medium px-2 py-1.5 rounded-lg flex items-center transition-colors ${folderFilter === "downloads" ? "bg-brand text-white" : "text-neutral-600 hover:bg-neutral-200"}`}
+                  className={`w-full text-start text-xs font-medium px-2 py-1.5 rounded-lg flex items-center transition-colors ${folderFilter === "downloads" ? "bg-brand text-white" : "text-neutral-600 hover:bg-neutral-200"}`}
                 >
-                  <Folder className="w-3.5 h-3.5 mr-1.5" /> Downloads
+                  <Folder className="w-3.5 h-3.5 me-1.5" /> {t("media_folder_downloads")}
                 </button>
               </div>
             </div>
@@ -198,38 +200,37 @@ export function MediaModal({ onClose, onSelect }: MediaModalProps) {
           </div>
 
           {/* Right Main Panel: Media Grid */}
-          <div className="col-span-3 p-5 flex flex-col min-h-0">
+          <div className="col-span-3 p-5 flex flex-col min-h-0 text-start">
             
             {/* Search Bar */}
             <div className="relative mb-4.5">
-              <Search className="absolute left-3.5 top-3 w-4 h-4 text-neutral-400" />
+              <Search className="absolute start-3.5 top-3 w-4 h-4 text-neutral-400" />
               <input
                 type="text"
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
-                placeholder="Search media library..."
-                className="w-full bg-neutral-100 border border-neutral-200 rounded-xl pl-10 pr-4 py-2.5 text-sm focus:outline-none focus:border-brand focus:bg-white transition-colors"
+                placeholder={t("media_search_placeholder")}
+                className="w-full bg-neutral-100 border border-neutral-200 rounded-xl ps-10 pe-4 py-2.5 text-sm focus:outline-none focus:border-brand focus:bg-white transition-colors text-start"
               />
             </div>
 
             {error && (
-              <div className="mb-4 p-3 bg-red-50 border border-red-150 rounded-lg flex items-center text-xs text-red-700">
-                <AlertCircle className="w-4 h-4 mr-2 shrink-0" />
+              <div className="p-3 mb-4 bg-red-50 border border-red-150 rounded-lg flex items-center text-xs text-red-700 text-start">
+                <AlertCircle className="w-4 h-4 me-2 shrink-0 animate-pulse" />
                 {error}
               </div>
             )}
 
             {/* Media Items List/Grid */}
-            <div className="flex-1 overflow-y-auto min-h-0 pr-1">
+            <div className="flex-1 overflow-y-auto min-h-0 pe-1">
               {loading ? (
                 <div className="h-full flex items-center justify-center text-neutral-500 text-sm">
-                  <div className="animate-pulse">Loading media assets...</div>
+                  <div className="animate-pulse">{t("media_loading")}</div>
                 </div>
               ) : filteredMedia.length === 0 ? (
                 <div className="h-full flex flex-col items-center justify-center text-neutral-400 p-8 text-center">
                   <Folder className="w-12 h-12 text-neutral-200 mb-2" />
-                  <p className="text-sm font-medium">No media found</p>
-                  <p className="text-xs text-neutral-400 mt-1">Upload files on the left to populate your library.</p>
+                  <p className="text-sm font-medium">{t("media_empty")}</p>
                 </div>
               ) : (
                 <div className="grid grid-cols-2 sm:grid-cols-3 gap-3.5">
@@ -258,19 +259,19 @@ export function MediaModal({ onClose, onSelect }: MediaModalProps) {
                             </div>
                           )}
                         </div>
-
+ 
                         {/* Title Overlay */}
                         <div className="p-2 bg-white border-t border-neutral-100 flex items-center justify-between">
-                          <span className="text-[10px] font-semibold text-neutral-800 truncate pr-1">
+                          <span className="text-[10px] font-semibold text-neutral-800 truncate pe-1 text-start">
                             {media.filename}
                           </span>
                           <span className="text-[8px] font-mono text-neutral-400 shrink-0 capitalize">
                             {media.folder || "general"}
                           </span>
                         </div>
-
+ 
                         {/* Direct Indicator */}
-                        <div className="absolute top-2 right-2 bg-brand text-white p-1 rounded-full opacity-0 group-hover:opacity-100 transition-opacity">
+                        <div className="absolute top-2 end-2 bg-brand text-white p-1 rounded-full opacity-0 group-hover:opacity-100 transition-opacity">
                           <Check className="w-3 h-3" />
                         </div>
                       </div>

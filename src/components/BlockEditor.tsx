@@ -21,6 +21,7 @@ import {
   ListOrdered
 } from "lucide-react";
 import { MediaModal } from "./MediaModal.js";
+import { useLanguage } from "../admin-i18n.js";
 
 // Simplified Tiptap rich text wrapper for each rich text block
 function TiptapEditor({ value, onChange }: { value: string; onChange: (val: string) => void }) {
@@ -92,7 +93,7 @@ function TiptapEditor({ value, onChange }: { value: string; onChange: (val: stri
       </div>
 
       {/* Content Area */}
-      <div className="p-3 min-h-[140px] focus-within:outline-none prose max-w-none text-sm text-neutral-800">
+      <div className="p-3 min-h-[140px] focus-within:outline-none prose max-w-none text-sm text-neutral-800 text-start">
         <EditorContent editor={editor} />
       </div>
     </div>
@@ -107,6 +108,15 @@ interface BlockEditorProps {
 export function BlockEditor({ blocks, onChange }: BlockEditorProps) {
   const [activeMediaBlockIndex, setActiveMediaBlockIndex] = useState<number | null>(null);
   const [activeMediaTarget, setActiveMediaTarget] = useState<"image_url" | "download_link">("image_url");
+  const { t } = useLanguage();
+
+  const blockTypeKeys: Record<string, string> = {
+    "RICH_TEXT": "blocks_type_rich_text",
+    "IMAGE": "blocks_type_image",
+    "APARAT_EMBED": "blocks_type_aparat_embed",
+    "CODE_SNIPPET": "blocks_type_code_snippet",
+    "DOWNLOAD_BOX": "blocks_type_download_box"
+  };
 
   // Move block up
   const moveUp = (index: number) => {
@@ -179,13 +189,13 @@ export function BlockEditor({ blocks, onChange }: BlockEditorProps) {
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between">
-        <h3 className="text-lg font-semibold text-neutral-900 tracking-tight">Article Body Blocks</h3>
-        <p className="text-xs font-mono text-neutral-500">{blocks.length} blocks configured</p>
+        <h3 className="text-lg font-semibold text-neutral-900 tracking-tight">{t("blocks_title")}</h3>
+        <p className="text-xs font-mono text-neutral-500">{blocks.length} {t("blocks_count")}</p>
       </div>
 
       {blocks.length === 0 ? (
         <div className="text-center py-12 border border-dashed border-neutral-200 bg-neutral-50/50 rounded-xl">
-          <p className="text-sm text-neutral-500">Your article has no blocks yet. Click any button below to build one!</p>
+          <p className="text-sm text-neutral-500">{t("blocks_empty")}</p>
         </div>
       ) : (
         <div className="space-y-4">
@@ -199,13 +209,13 @@ export function BlockEditor({ blocks, onChange }: BlockEditorProps) {
                 className="group relative bg-neutral-50 hover:bg-neutral-100/60 border border-neutral-200 hover:border-neutral-300 rounded-xl p-4 transition-all"
               >
                 {/* Block Controls */}
-                <div className="absolute right-4 top-4 flex items-center space-x-1 opacity-60 group-hover:opacity-100 transition-opacity bg-white border border-neutral-200 rounded-lg p-0.5 shadow-sm">
+                <div className="absolute end-4 top-4 flex items-center gap-1 opacity-60 group-hover:opacity-100 transition-opacity bg-white border border-neutral-200 rounded-lg p-0.5 shadow-sm">
                   <button
                     type="button"
                     onClick={() => moveUp(index)}
                     disabled={isFirst}
                     className="p-1 rounded text-neutral-500 hover:text-neutral-900 disabled:opacity-30 hover:bg-neutral-100"
-                    title="Move block up"
+                    title={t("blocks_move_up")}
                   >
                     <ArrowUp className="w-3.5 h-3.5" />
                   </button>
@@ -214,7 +224,7 @@ export function BlockEditor({ blocks, onChange }: BlockEditorProps) {
                     onClick={() => moveDown(index)}
                     disabled={isLast}
                     className="p-1 rounded text-neutral-500 hover:text-neutral-900 disabled:opacity-30 hover:bg-neutral-100"
-                    title="Move block down"
+                    title={t("blocks_move_down")}
                   >
                     <ArrowDown className="w-3.5 h-3.5" />
                   </button>
@@ -223,14 +233,14 @@ export function BlockEditor({ blocks, onChange }: BlockEditorProps) {
                     type="button"
                     onClick={() => deleteBlock(index)}
                     className="p-1 rounded text-red-500 hover:text-red-700 hover:bg-red-50"
-                    title="Delete block"
+                    title={t("blocks_delete")}
                   >
                     <Trash2 className="w-3.5 h-3.5" />
                   </button>
                 </div>
 
                 {/* Block Title & Indicator */}
-                <div className="flex items-center space-x-2 mb-3">
+                <div className="flex items-center gap-2 mb-3">
                   <span className="p-1.5 rounded-lg bg-neutral-200 text-neutral-700">
                     {block.type === "RICH_TEXT" && <Type className="w-4 h-4" />}
                     {block.type === "IMAGE" && <ImageIcon className="w-4 h-4" />}
@@ -239,7 +249,7 @@ export function BlockEditor({ blocks, onChange }: BlockEditorProps) {
                     {block.type === "DOWNLOAD_BOX" && <FileDown className="w-4 h-4" />}
                   </span>
                   <span className="text-xs font-mono text-neutral-500 uppercase tracking-wider font-semibold">
-                    {block.type.replace("_", " ")}
+                    {t(blockTypeKeys[block.type] || block.type.replace("_", " "))}
                   </span>
                 </div>
 
@@ -255,14 +265,14 @@ export function BlockEditor({ blocks, onChange }: BlockEditorProps) {
                   {block.type === "IMAGE" && (
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                       <div className="space-y-1.5">
-                        <label className="text-xs font-medium text-neutral-700">Image URL</label>
-                        <div className="flex space-x-1.5">
+                        <label className="text-xs font-medium text-neutral-700 text-start block">{t("blocks_img_url")}</label>
+                        <div className="flex gap-1.5">
                           <input
                             type="text"
                             value={block.data.url || ""}
                             onChange={(e) => updateBlockData(index, { url: e.target.value })}
                             placeholder="https://images.unsplash.com/..."
-                            className="flex-1 text-sm bg-white border border-neutral-300 rounded-lg px-3 py-1.5 focus:outline-none focus:border-brand"
+                            className="flex-1 text-sm bg-white border border-neutral-300 rounded-lg px-3 py-1.5 focus:outline-none focus:border-brand text-start"
                           />
                           <button
                             type="button"
@@ -270,8 +280,8 @@ export function BlockEditor({ blocks, onChange }: BlockEditorProps) {
                               setActiveMediaBlockIndex(index);
                               setActiveMediaTarget("image_url");
                             }}
-                            className="p-1.5 bg-neutral-200 hover:bg-brand hover:text-white rounded-lg transition-colors flex items-center"
-                            title="Browse Media Library"
+                            className="p-1.5 bg-neutral-200 hover:bg-brand hover:text-white rounded-lg transition-colors flex items-center shrink-0"
+                            title={t("blocks_browse_media")}
                           >
                             <FolderOpen className="w-4 h-4" />
                           </button>
@@ -279,23 +289,23 @@ export function BlockEditor({ blocks, onChange }: BlockEditorProps) {
                       </div>
                       <div className="grid grid-cols-2 gap-2">
                         <div className="space-y-1.5">
-                          <label className="text-xs font-medium text-neutral-700">Alt Text</label>
+                          <label className="text-xs font-medium text-neutral-700 text-start block">{t("blocks_img_alt")}</label>
                           <input
                             type="text"
                             value={block.data.alt || ""}
                             onChange={(e) => updateBlockData(index, { alt: e.target.value })}
                             placeholder="Image accessibility text"
-                            className="w-full text-sm bg-white border border-neutral-300 rounded-lg px-3 py-1.5 focus:outline-none focus:border-brand"
+                            className="w-full text-sm bg-white border border-neutral-300 rounded-lg px-3 py-1.5 focus:outline-none focus:border-brand text-start"
                           />
                         </div>
                         <div className="space-y-1.5">
-                          <label className="text-xs font-medium text-neutral-700">Caption</label>
+                          <label className="text-xs font-medium text-neutral-700 text-start block">{t("blocks_img_caption")}</label>
                           <input
                             type="text"
                             value={block.data.caption || ""}
                             onChange={(e) => updateBlockData(index, { caption: e.target.value })}
                             placeholder="Optional figcaption"
-                            className="w-full text-sm bg-white border border-neutral-300 rounded-lg px-3 py-1.5 focus:outline-none focus:border-brand"
+                            className="w-full text-sm bg-white border border-neutral-300 rounded-lg px-3 py-1.5 focus:outline-none focus:border-brand text-start"
                           />
                         </div>
                       </div>
@@ -305,23 +315,23 @@ export function BlockEditor({ blocks, onChange }: BlockEditorProps) {
                   {block.type === "APARAT_EMBED" && (
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                       <div className="space-y-1.5">
-                        <label className="text-xs font-medium text-neutral-700">Aparat Video ID or URL</label>
+                        <label className="text-xs font-medium text-neutral-700 text-start block">{t("blocks_video_id")}</label>
                         <input
                           type="text"
                           value={block.data.videoId || block.data.url || ""}
                           onChange={(e) => updateBlockData(index, { videoId: e.target.value, url: e.target.value })}
                           placeholder="e.g. gNf67 or https://www.aparat.com/v/gNf67"
-                          className="w-full text-sm bg-white border border-neutral-300 rounded-lg px-3 py-1.5 focus:outline-none focus:border-brand"
+                          className="w-full text-sm bg-white border border-neutral-300 rounded-lg px-3 py-1.5 focus:outline-none focus:border-brand text-start"
                         />
                       </div>
                       <div className="space-y-1.5">
-                        <label className="text-xs font-medium text-neutral-700">Video Title (optional)</label>
+                        <label className="text-xs font-medium text-neutral-700 text-start block">{t("blocks_video_title")}</label>
                         <input
                           type="text"
                           value={block.data.title || ""}
                           onChange={(e) => updateBlockData(index, { title: e.target.value })}
                           placeholder="Business Pitch Tutorial"
-                          className="w-full text-sm bg-white border border-neutral-300 rounded-lg px-3 py-1.5 focus:outline-none focus:border-brand"
+                          className="w-full text-sm bg-white border border-neutral-300 rounded-lg px-3 py-1.5 focus:outline-none focus:border-brand text-start"
                         />
                       </div>
                     </div>
@@ -330,7 +340,7 @@ export function BlockEditor({ blocks, onChange }: BlockEditorProps) {
                   {block.type === "CODE_SNIPPET" && (
                     <div className="space-y-3">
                       <div className="flex items-center justify-between">
-                        <label className="text-xs font-medium text-neutral-700">Code Editor</label>
+                        <label className="text-xs font-medium text-neutral-700">{t("blocks_code_editor")}</label>
                         <select
                           value={block.data.language || "typescript"}
                           onChange={(e) => updateBlockData(index, { language: e.target.value })}
@@ -349,8 +359,8 @@ export function BlockEditor({ blocks, onChange }: BlockEditorProps) {
                         rows={5}
                         value={block.data.code || ""}
                         onChange={(e) => updateBlockData(index, { code: e.target.value })}
-                        placeholder="Paste code snippet here..."
-                        className="w-full p-3 font-mono text-xs bg-neutral-900 text-neutral-100 rounded-lg focus:outline-none"
+                        placeholder={t("blocks_code_placeholder")}
+                        className="w-full p-3 font-mono text-xs bg-neutral-900 text-neutral-100 rounded-lg focus:outline-none text-start"
                       />
                     </div>
                   )}
@@ -359,34 +369,34 @@ export function BlockEditor({ blocks, onChange }: BlockEditorProps) {
                     <div className="space-y-3">
                       <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                         <div className="space-y-1.5">
-                          <label className="text-xs font-medium text-neutral-700">Filename</label>
+                          <label className="text-xs font-medium text-neutral-700 text-start block">{t("blocks_file_name")}</label>
                           <input
                             type="text"
                             value={block.data.filename || ""}
                             onChange={(e) => updateBlockData(index, { filename: e.target.value })}
                             placeholder="marketing-workbook.pdf"
-                            className="w-full text-sm bg-white border border-neutral-300 rounded-lg px-3 py-1.5 focus:outline-none focus:border-brand"
+                            className="w-full text-sm bg-white border border-neutral-300 rounded-lg px-3 py-1.5 focus:outline-none focus:border-brand text-start"
                           />
                         </div>
                         <div className="space-y-1.5">
-                          <label className="text-xs font-medium text-neutral-700">File Size</label>
+                          <label className="text-xs font-medium text-neutral-700 text-start block">{t("blocks_file_size")}</label>
                           <input
                             type="text"
                             value={block.data.size || ""}
                             onChange={(e) => updateBlockData(index, { size: e.target.value })}
                             placeholder="e.g. 4.8 MB"
-                            className="w-full text-sm bg-white border border-neutral-300 rounded-lg px-3 py-1.5 focus:outline-none focus:border-brand"
+                            className="w-full text-sm bg-white border border-neutral-300 rounded-lg px-3 py-1.5 focus:outline-none focus:border-brand text-start"
                           />
                         </div>
                         <div className="space-y-1.5">
-                          <label className="text-xs font-medium text-neutral-700">Download Link / File URL</label>
-                          <div className="flex space-x-1.5">
+                          <label className="text-xs font-medium text-neutral-700 text-start block">{t("blocks_file_link")}</label>
+                          <div className="flex gap-1.5">
                             <input
                               type="text"
                               value={block.data.link || ""}
                               onChange={(e) => updateBlockData(index, { link: e.target.value })}
                               placeholder="/uploads/my-file.zip"
-                              className="flex-1 text-sm bg-white border border-neutral-300 rounded-lg px-3 py-1.5 focus:outline-none focus:border-brand"
+                              className="flex-1 text-sm bg-white border border-neutral-300 rounded-lg px-3 py-1.5 focus:outline-none focus:border-brand text-start"
                             />
                             <button
                               type="button"
@@ -394,8 +404,8 @@ export function BlockEditor({ blocks, onChange }: BlockEditorProps) {
                                 setActiveMediaBlockIndex(index);
                                 setActiveMediaTarget("download_link");
                               }}
-                              className="p-1.5 bg-neutral-200 hover:bg-brand hover:text-white rounded-lg transition-colors flex items-center"
-                              title="Browse Media Library"
+                              className="p-1.5 bg-neutral-200 hover:bg-brand hover:text-white rounded-lg transition-colors flex items-center shrink-0"
+                              title={t("blocks_browse_media")}
                             >
                               <FolderOpen className="w-4 h-4" />
                             </button>
@@ -403,13 +413,13 @@ export function BlockEditor({ blocks, onChange }: BlockEditorProps) {
                         </div>
                       </div>
                       <div className="space-y-1.5">
-                        <label className="text-xs font-medium text-neutral-700">Short File Description</label>
+                        <label className="text-xs font-medium text-neutral-700 text-start block">{t("blocks_file_desc")}</label>
                         <input
                           type="text"
                           value={block.data.description || ""}
                           onChange={(e) => updateBlockData(index, { description: e.target.value })}
                           placeholder="Workbook containing all slides, business model templates, and formulas."
-                          className="w-full text-sm bg-white border border-neutral-300 rounded-lg px-3 py-1.5 focus:outline-none focus:border-brand"
+                          className="w-full text-sm bg-white border border-neutral-300 rounded-lg px-3 py-1.5 focus:outline-none focus:border-brand text-start"
                         />
                       </div>
                     </div>
@@ -422,43 +432,43 @@ export function BlockEditor({ blocks, onChange }: BlockEditorProps) {
       )}
 
       {/* Insert Block Toolbar */}
-      <div className="border border-dashed border-neutral-300 rounded-xl p-4 bg-neutral-50 flex flex-col items-center justify-center space-y-3">
-        <span className="text-xs font-medium text-neutral-500 uppercase tracking-wider">Insert New Block</span>
+      <div className="border border-dashed border-neutral-300 rounded-xl p-4 bg-neutral-50 flex flex-col items-center justify-center gap-3">
+        <span className="text-xs font-medium text-neutral-500 uppercase tracking-wider">{t("blocks_insert_title")}</span>
         <div className="flex flex-wrap justify-center gap-2">
           <button
             type="button"
             onClick={() => addBlock("RICH_TEXT")}
             className="inline-flex items-center px-3 py-1.5 rounded-lg bg-white border border-neutral-200 hover:border-brand hover:text-brand text-sm font-medium transition-all shadow-xs cursor-pointer"
           >
-            <Type className="w-4 h-4 mr-1.5 text-neutral-500" /> Rich Text
+            <Type className="w-4 h-4 me-1.5 text-neutral-500" /> {t("blocks_type_rich_text")}
           </button>
           <button
             type="button"
             onClick={() => addBlock("IMAGE")}
             className="inline-flex items-center px-3 py-1.5 rounded-lg bg-white border border-neutral-200 hover:border-brand hover:text-brand text-sm font-medium transition-all shadow-xs cursor-pointer"
           >
-            <ImageIcon className="w-4 h-4 mr-1.5 text-neutral-500" /> Image
+            <ImageIcon className="w-4 h-4 me-1.5 text-neutral-500" /> {t("blocks_type_image")}
           </button>
           <button
             type="button"
             onClick={() => addBlock("APARAT_EMBED")}
             className="inline-flex items-center px-3 py-1.5 rounded-lg bg-white border border-neutral-200 hover:border-brand hover:text-brand text-sm font-medium transition-all shadow-xs cursor-pointer"
           >
-            <Play className="w-4 h-4 mr-1.5 text-neutral-500" /> Aparat Video
+            <Play className="w-4 h-4 me-1.5 text-neutral-500" /> {t("blocks_type_aparat_embed")}
           </button>
           <button
             type="button"
             onClick={() => addBlock("CODE_SNIPPET")}
             className="inline-flex items-center px-3 py-1.5 rounded-lg bg-white border border-neutral-200 hover:border-brand hover:text-brand text-sm font-medium transition-all shadow-xs cursor-pointer"
           >
-            <Code className="w-4 h-4 mr-1.5 text-neutral-500" /> Code Snippet
+            <Code className="w-4 h-4 me-1.5 text-neutral-500" /> {t("blocks_type_code_snippet")}
           </button>
           <button
             type="button"
             onClick={() => addBlock("DOWNLOAD_BOX")}
             className="inline-flex items-center px-3 py-1.5 rounded-lg bg-white border border-neutral-200 hover:border-brand hover:text-brand text-sm font-medium transition-all shadow-xs cursor-pointer"
           >
-            <FileDown className="w-4 h-4 mr-1.5 text-neutral-500" /> Download Box
+            <FileDown className="w-4 h-4 me-1.5 text-neutral-500" /> {t("blocks_type_download_box")}
           </button>
         </div>
       </div>

@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from "react";
-import { BrowserRouter, Routes, Route, Link, useParams, useNavigate, Navigate } from "react-router-dom";
+import { BrowserRouter, Routes, Route, Link, useParams, useNavigate, Navigate, useLocation } from "react-router-dom";
 import { 
   Plus, 
   Settings, 
@@ -30,6 +30,7 @@ import { Post, Category, Tag, Page } from "./types.js";
 import { Navbar } from "./components/Navbar.js";
 import { BlockRenderer } from "./components/BlockRenderer.js";
 import { BlockEditor } from "./components/BlockEditor.js";
+import { LanguageProvider, useLanguage } from "./admin-i18n.js";
 
 // Helper to check auth
 const isAuthenticated = () => !!localStorage.getItem("accessToken");
@@ -915,6 +916,7 @@ function BlogPostView() {
 // ==========================================
 function Login() {
   const navigate = useNavigate();
+  const { t } = useLanguage();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
@@ -943,7 +945,14 @@ function Login() {
       // Navigate to Admin home
       navigate("/admin");
     } catch (err: any) {
-      setError(err.message || "Invalid credentials");
+      const msg = err.message || "";
+      if (msg.includes("verification") || msg.includes("failed")) {
+        setError(t("login_error_failed"));
+      } else if (msg.includes("credentials")) {
+        setError(t("login_error_invalid"));
+      } else {
+        setError(msg);
+      }
     } finally {
       setLoading(false);
     }
@@ -953,39 +962,39 @@ function Login() {
     <div className="max-w-md mx-auto px-4 py-24">
       <div className="bg-white border border-neutral-200 rounded-2xl p-8 shadow-xl space-y-6">
         <div className="text-center space-y-1.5">
-          <h2 className="text-2xl font-extrabold font-display tracking-tight text-neutral-900">Admin Console</h2>
-          <p className="text-xs text-neutral-500">Log in with your pre-seeded administrator credentials</p>
+          <h2 className="text-2xl font-extrabold font-display tracking-tight text-neutral-900">{t("login_title")}</h2>
+          <p className="text-xs text-neutral-500">{t("login_subtitle")}</p>
         </div>
 
         {error && (
           <div className="p-3 bg-red-50 border border-red-150 rounded-lg flex items-center text-xs text-red-700">
-            <AlertCircle className="w-4 h-4 mr-2 shrink-0" />
+            <AlertCircle className="w-4 h-4 me-2 shrink-0 animate-pulse" />
             {error}
           </div>
         )}
 
         <form onSubmit={handleLogin} className="space-y-4">
           <div className="space-y-1.5">
-            <label className="text-xs font-semibold text-neutral-700 block">Email Address</label>
+            <label className="text-xs font-semibold text-neutral-700 block text-start">{t("login_email")}</label>
             <input
               type="email"
               value={email}
               onChange={(e) => setEmail(e.target.value)}
               placeholder="admin@betavan.ir"
               required
-              className="w-full bg-neutral-50 border border-neutral-200 rounded-lg px-3 py-2.5 text-sm focus:outline-none focus:border-brand focus:bg-white transition-colors"
+              className="w-full bg-neutral-50 border border-neutral-200 rounded-lg px-3 py-2.5 text-sm focus:outline-none focus:border-brand focus:bg-white transition-colors text-start"
             />
           </div>
 
           <div className="space-y-1.5">
-            <label className="text-xs font-semibold text-neutral-700 block">Password</label>
+            <label className="text-xs font-semibold text-neutral-700 block text-start">{t("login_password")}</label>
             <input
               type="password"
               value={password}
               onChange={(e) => setPassword(e.target.value)}
               placeholder="••••••••"
               required
-              className="w-full bg-neutral-50 border border-neutral-200 rounded-lg px-3 py-2.5 text-sm focus:outline-none focus:border-brand focus:bg-white transition-colors"
+              className="w-full bg-neutral-50 border border-neutral-200 rounded-lg px-3 py-2.5 text-sm focus:outline-none focus:border-brand focus:bg-white transition-colors text-start"
             />
           </div>
 
@@ -994,13 +1003,13 @@ function Login() {
             disabled={loading}
             className="w-full bg-neutral-900 hover:bg-brand text-white font-bold text-sm py-2.5 rounded-lg transition-colors shadow-sm cursor-pointer"
           >
-            {loading ? "Authenticating..." : "Log In"}
+            {loading ? t("login_authenticating") : t("login_btn")}
           </button>
         </form>
 
         <div className="pt-4 border-t border-neutral-100 text-center">
           <span className="text-[10px] text-neutral-400 font-mono">
-            Default sandbox login: admin@betavan.ir / admin123
+            {t("login_default_credentials")}
           </span>
         </div>
       </div>
@@ -1013,6 +1022,7 @@ function Login() {
 // ==========================================
 function AdminDashboard() {
   const navigate = useNavigate();
+  const { t } = useLanguage();
   const [posts, setPosts] = useState<Post[]>([]);
   const [pages, setPages] = useState<Page[]>([]);
   const [categories, setCategories] = useState<Category[]>([]);
@@ -1050,7 +1060,7 @@ function AdminDashboard() {
         setTags(tagData);
       }
     } catch (err: any) {
-      setError("Failed to load dashboard data");
+      setError(t("dashboard_loading_error") || "Failed to load dashboard data");
     } finally {
       setLoading(false);
     }
@@ -1061,7 +1071,7 @@ function AdminDashboard() {
   }, []);
 
   const handleDeletePost = async (id: string) => {
-    if (!window.confirm("Are you sure you want to delete this article?")) return;
+    if (!window.confirm(t("dashboard_delete_confirm"))) return;
     try {
       const token = localStorage.getItem("accessToken");
       const res = await fetch(`/api/posts/${id}`, {
@@ -1125,40 +1135,40 @@ function AdminDashboard() {
     <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-10 space-y-8">
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-        <div>
-          <h2 className="text-2xl font-extrabold text-neutral-900 font-display tracking-tight">Admin Console</h2>
-          <p className="text-xs text-neutral-500">Manage all editorial posts, categories, tags, and static content</p>
+        <div className="text-start">
+          <h2 className="text-2xl font-extrabold text-neutral-900 font-display tracking-tight">{t("dashboard_title")}</h2>
+          <p className="text-xs text-neutral-500">{t("dashboard_subtitle")}</p>
         </div>
-        <div className="flex space-x-2">
+        <div className="flex gap-2">
           <Link
             to="/admin/posts/new"
             className="inline-flex items-center px-4 py-2 rounded-lg bg-neutral-950 text-white font-semibold text-xs hover:bg-brand transition-colors shadow-sm cursor-pointer"
           >
-            <Plus className="w-4 h-4 mr-1.5" /> Write New Post
+            <Plus className="w-4 h-4 me-1.5" /> {t("dashboard_new_post")}
           </Link>
         </div>
       </div>
 
       {/* Tabs Menu */}
       <div className="border-b border-neutral-200">
-        <div className="flex space-x-6">
+        <div className="flex gap-6">
           <button
             onClick={() => setActiveTab("posts")}
             className={`py-3 text-sm font-semibold border-b-2 transition-colors cursor-pointer ${activeTab === "posts" ? "border-brand text-brand" : "border-transparent text-neutral-500 hover:text-neutral-800"}`}
           >
-            Articles ({posts.length})
+            {t("dashboard_tab_articles")} ({posts.length})
           </button>
           <button
             onClick={() => setActiveTab("categories")}
             className={`py-3 text-sm font-semibold border-b-2 transition-colors cursor-pointer ${activeTab === "categories" ? "border-brand text-brand" : "border-transparent text-neutral-500 hover:text-neutral-800"}`}
           >
-            Categories ({categories.length})
+            {t("dashboard_tab_categories")} ({categories.length})
           </button>
           <button
             onClick={() => setActiveTab("tags")}
             className={`py-3 text-sm font-semibold border-b-2 transition-colors cursor-pointer ${activeTab === "tags" ? "border-brand text-brand" : "border-transparent text-neutral-500 hover:text-neutral-800"}`}
           >
-            Tags ({tags.length})
+            {t("dashboard_tab_tags")} ({tags.length})
           </button>
         </div>
       </div>
@@ -1166,40 +1176,40 @@ function AdminDashboard() {
       {/* Tab Contents */}
       <div className="bg-white border border-neutral-200 rounded-2xl overflow-hidden shadow-sm">
         {loading ? (
-          <div className="p-16 text-center text-neutral-500 font-medium">Loading dashboard data...</div>
+          <div className="p-16 text-center text-neutral-500 font-medium">{t("dashboard_loading")}</div>
         ) : (
           <>
             {activeTab === "posts" && (
               <div className="overflow-x-auto">
-                <table className="w-full text-left text-sm border-collapse">
+                <table className="w-full text-start text-sm border-collapse">
                   <thead>
                     <tr className="bg-neutral-50 border-b border-neutral-200 text-neutral-500 font-semibold text-xs uppercase tracking-wider">
-                      <th className="p-4">Title</th>
-                      <th className="p-4">Category</th>
-                      <th className="p-4">Tags</th>
-                      <th className="p-4">Status</th>
-                      <th className="p-4">Date</th>
-                      <th className="p-4 text-right">Actions</th>
+                      <th className="p-4 text-start">{t("dashboard_table_title")}</th>
+                      <th className="p-4 text-start">{t("dashboard_table_category")}</th>
+                      <th className="p-4 text-start">{t("dashboard_table_tags")}</th>
+                      <th className="p-4 text-start">{t("dashboard_table_status")}</th>
+                      <th className="p-4 text-start">{t("dashboard_table_date")}</th>
+                      <th className="p-4 text-end">{t("dashboard_table_actions")}</th>
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-neutral-150">
                     {posts.length === 0 ? (
                       <tr>
                         <td colSpan={6} className="p-8 text-center text-neutral-500">
-                          No posts found. Start by writing your first article!
+                          {t("dashboard_no_posts")}
                         </td>
                       </tr>
                     ) : (
                       posts.map((post) => (
                         <tr key={post.id} className="hover:bg-neutral-50/50 transition-colors">
-                          <td className="p-4">
+                          <td className="p-4 text-start">
                             <span className="font-semibold text-neutral-900 block line-clamp-1">{post.title}</span>
                             <span className="text-[10px] font-mono text-neutral-400">/{post.slug}</span>
                           </td>
-                          <td className="p-4 text-xs font-semibold text-neutral-700">
-                            {post.category?.name || "Uncategorized"}
+                          <td className="p-4 text-start text-xs font-semibold text-neutral-700">
+                            {post.category?.name || t("dashboard_uncategorized")}
                           </td>
-                          <td className="p-4">
+                          <td className="p-4 text-start">
                             <div className="flex flex-wrap gap-1 max-w-[200px]">
                               {post.tags?.map(t => (
                                 <span key={t.id} className="text-[9px] font-mono bg-neutral-100 text-neutral-500 px-1.5 py-0.5 rounded">
@@ -1208,34 +1218,34 @@ function AdminDashboard() {
                               ))}
                             </div>
                           </td>
-                          <td className="p-4">
+                          <td className="p-4 text-start">
                             <span className={`inline-flex items-center text-[10px] font-bold px-2 py-0.5 rounded-full ${post.status === "PUBLISHED" ? "bg-emerald-50 text-emerald-700" : "bg-neutral-100 text-neutral-500"}`}>
                               {post.status}
                             </span>
                           </td>
-                          <td className="p-4 text-xs text-neutral-500 font-mono">
-                            {post.publishedAt ? new Date(post.publishedAt).toLocaleDateString() : "Draft"}
+                          <td className="p-4 text-start text-xs text-neutral-500 font-mono">
+                            {post.publishedAt ? new Date(post.publishedAt).toLocaleDateString() : t("edit_status_draft")}
                           </td>
-                          <td className="p-4 text-right">
-                            <div className="flex items-center justify-end space-x-1.5">
+                          <td className="p-4 text-end">
+                            <div className="flex items-center justify-end gap-1.5">
                               <Link
                                 to={`/blog/${post.slug}`}
                                 className="p-1.5 hover:bg-neutral-100 rounded-lg text-neutral-500 hover:text-neutral-900 transition-colors"
-                                title="Preview article"
+                                title={t("dashboard_preview")}
                               >
                                 <Eye className="w-4 h-4" />
                               </Link>
                               <Link
                                 to={`/admin/posts/edit/${post.id}`}
                                 className="p-1.5 hover:bg-neutral-100 rounded-lg text-neutral-500 hover:text-brand transition-colors"
-                                title="Edit article"
+                                title={t("dashboard_edit")}
                               >
                                 <Edit className="w-4 h-4" />
                               </Link>
                               <button
                                 onClick={() => handleDeletePost(post.id)}
                                 className="p-1.5 hover:bg-red-50 rounded-lg text-red-500 hover:text-red-700 transition-colors"
-                                title="Delete article"
+                                title={t("dashboard_delete")}
                               >
                                 <Trash2 className="w-4 h-4" />
                               </button>
@@ -1256,18 +1266,18 @@ function AdminDashboard() {
                     type="text"
                     value={newCatName}
                     onChange={(e) => setNewCatName(e.target.value)}
-                    placeholder="New Category Name (e.g. AI Tutorials)"
+                    placeholder={t("dashboard_add_category_placeholder")}
                     required
-                    className="flex-1 text-sm bg-neutral-50 border border-neutral-300 rounded-lg px-3 py-2 focus:outline-none focus:border-brand focus:bg-white"
+                    className="flex-1 text-sm bg-neutral-50 border border-neutral-300 rounded-lg px-3 py-2 focus:outline-none focus:border-brand focus:bg-white text-start"
                   />
-                  <button type="submit" className="bg-neutral-900 hover:bg-brand text-white text-xs font-semibold px-4 py-2 rounded-lg transition-colors cursor-pointer">
-                    Add Category
+                  <button type="submit" className="bg-neutral-900 hover:bg-brand text-white text-xs font-semibold px-4 py-2 rounded-lg transition-colors cursor-pointer whitespace-nowrap">
+                    {t("dashboard_add_category_btn")}
                   </button>
                 </form>
 
                 <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
                   {categories.map(cat => (
-                    <div key={cat.id} className="p-3 border border-neutral-200 rounded-xl bg-neutral-50/50 flex flex-col justify-between">
+                    <div key={cat.id} className="p-3 border border-neutral-200 rounded-xl bg-neutral-50/50 flex flex-col justify-between text-start">
                       <span className="font-semibold text-neutral-900 text-sm">{cat.name}</span>
                       <span className="text-[10px] font-mono text-neutral-400 mt-1">/{cat.slug}</span>
                     </div>
@@ -1283,18 +1293,18 @@ function AdminDashboard() {
                     type="text"
                     value={newTagName}
                     onChange={(e) => setNewTagName(e.target.value)}
-                    placeholder="New Tag Name (e.g. ChatGPT)"
+                    placeholder={t("dashboard_add_tag_placeholder")}
                     required
-                    className="flex-1 text-sm bg-neutral-50 border border-neutral-300 rounded-lg px-3 py-2 focus:outline-none focus:border-brand focus:bg-white"
+                    className="flex-1 text-sm bg-neutral-50 border border-neutral-300 rounded-lg px-3 py-2 focus:outline-none focus:border-brand focus:bg-white text-start"
                   />
-                  <button type="submit" className="bg-neutral-900 hover:bg-brand text-white text-xs font-semibold px-4 py-2 rounded-lg transition-colors cursor-pointer">
-                    Add Tag
+                  <button type="submit" className="bg-neutral-900 hover:bg-brand text-white text-xs font-semibold px-4 py-2 rounded-lg transition-colors cursor-pointer whitespace-nowrap">
+                    {t("dashboard_add_tag_btn")}
                   </button>
                 </form>
 
-                <div className="flex flex-wrap gap-2">
+                <div className="flex flex-wrap gap-2 text-start">
                   {tags.map(tag => (
-                    <div key={tag.id} className="px-3 py-1.5 border border-neutral-200 rounded-full bg-white text-xs font-semibold text-neutral-700 flex items-center space-x-1.5">
+                    <div key={tag.id} className="px-3 py-1.5 border border-neutral-200 rounded-full bg-white text-xs font-semibold text-neutral-700 flex items-center gap-1.5">
                       <span>#{tag.name}</span>
                     </div>
                   ))}
@@ -1315,6 +1325,7 @@ function EditPost() {
   const { id } = useParams();
   const isNew = !id;
   const navigate = useNavigate();
+  const { t, locale } = useLanguage();
 
   const [title, setTitle] = useState("");
   const [slug, setSlug] = useState("");
@@ -1453,7 +1464,7 @@ function EditPost() {
   if (loading) {
     return (
       <div className="max-w-3xl mx-auto px-4 py-24 text-center text-neutral-500 font-medium">
-        Loading post details...
+        {t("edit_loading")}
       </div>
     );
   }
@@ -1463,16 +1474,16 @@ function EditPost() {
       {/* Back button */}
       <div className="flex items-center justify-between">
         <Link to="/admin" className="text-xs font-semibold text-neutral-500 hover:text-neutral-900 flex items-center">
-          ← Back to Console
+          <span className="rtl:scale-x-[-1] inline-block me-1.5 font-sans">←</span> {t("edit_back_btn")}
         </Link>
         <span className="text-xs font-mono text-neutral-400">
-          {isNew ? "Creating New Article" : `Editing: ${title}`}
+          {isNew ? t("edit_new_title") : `${t("edit_editing_title")}: ${title}`}
         </span>
       </div>
 
       {error && (
-        <div className="p-4 bg-red-50 border border-red-150 rounded-xl flex items-center text-sm text-red-700">
-          <AlertCircle className="w-5 h-5 mr-2 shrink-0" />
+        <div className="p-4 bg-red-50 border border-red-150 rounded-xl flex items-center text-sm text-red-700 text-start">
+          <AlertCircle className="w-5 h-5 me-2 shrink-0 animate-pulse" />
           {error}
         </div>
       )}
@@ -1482,56 +1493,56 @@ function EditPost() {
         <div className="lg:col-span-2 space-y-6">
           
           {/* Title & Slug */}
-          <div className="bg-white border border-neutral-200 rounded-2xl p-6 space-y-4 shadow-xs">
+          <div className="bg-white border border-neutral-200 rounded-2xl p-6 space-y-4 shadow-xs text-start">
             <div className="space-y-1.5">
-              <label className="text-xs font-bold text-neutral-700 uppercase tracking-wider block">Article Title</label>
+              <label className="text-xs font-bold text-neutral-700 uppercase tracking-wider block">{t("edit_article_title")}</label>
               <input
                 type="text"
                 value={title}
                 onChange={(e) => setTitle(e.target.value)}
-                placeholder="Aparat embeds inside blog post tutorials..."
+                placeholder={t("edit_article_title_placeholder")}
                 required
-                className="w-full text-lg font-bold bg-neutral-50 border border-neutral-200 rounded-xl px-4 py-3 focus:outline-none focus:border-brand focus:bg-white"
+                className="w-full text-lg font-bold bg-neutral-50 border border-neutral-200 rounded-xl px-4 py-3 focus:outline-none focus:border-brand focus:bg-white text-start"
               />
             </div>
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div className="space-y-1.5">
-                <label className="text-xs font-bold text-neutral-700 uppercase tracking-wider block">Slug URL</label>
+                <label className="text-xs font-bold text-neutral-700 uppercase tracking-wider block">{t("edit_slug")}</label>
                 <input
                   type="text"
                   value={slug}
                   onChange={(e) => setSlug(e.target.value)}
-                  placeholder="aparat-embeds-tutorial"
-                  className="w-full text-sm bg-neutral-50 border border-neutral-200 rounded-lg px-3 py-2 focus:outline-none focus:border-brand focus:bg-white font-mono"
+                  placeholder={t("edit_slug_placeholder")}
+                  className="w-full text-sm bg-neutral-50 border border-neutral-200 rounded-lg px-3 py-2 focus:outline-none focus:border-brand focus:bg-white font-mono text-start"
                 />
               </div>
               <div className="space-y-1.5">
-                <label className="text-xs font-bold text-neutral-700 uppercase tracking-wider block">Featured Cover Image URL</label>
+                <label className="text-xs font-bold text-neutral-700 uppercase tracking-wider block">{t("edit_cover_img")}</label>
                 <input
                   type="text"
                   value={coverImage}
                   onChange={(e) => setCoverImage(e.target.value)}
                   placeholder="https://images.unsplash.com/..."
-                  className="w-full text-sm bg-neutral-50 border border-neutral-200 rounded-lg px-3 py-2 focus:outline-none focus:border-brand focus:bg-white"
+                  className="w-full text-sm bg-neutral-50 border border-neutral-200 rounded-lg px-3 py-2 focus:outline-none focus:border-brand focus:bg-white text-start"
                 />
               </div>
             </div>
 
             <div className="space-y-1.5">
-              <label className="text-xs font-bold text-neutral-700 uppercase tracking-wider block">Short Excerpt</label>
+              <label className="text-xs font-bold text-neutral-700 uppercase tracking-wider block">{t("edit_excerpt")}</label>
               <textarea
                 rows={2}
                 value={excerpt}
                 onChange={(e) => setExcerpt(e.target.value)}
-                placeholder="Write a highly concise summary of the article..."
-                className="w-full text-sm bg-neutral-50 border border-neutral-200 rounded-lg px-3 py-2 focus:outline-none focus:border-brand focus:bg-white leading-relaxed"
+                placeholder={t("edit_excerpt_placeholder")}
+                className="w-full text-sm bg-neutral-50 border border-neutral-200 rounded-lg px-3 py-2 focus:outline-none focus:border-brand focus:bg-white leading-relaxed text-start"
               />
             </div>
           </div>
 
           {/* Visual Block Editor */}
-          <div className="bg-white border border-neutral-200 rounded-2xl p-6 shadow-xs">
+          <div className="bg-white border border-neutral-200 rounded-2xl p-6 shadow-xs text-start">
             <BlockEditor blocks={blocks} onChange={setBlocks} />
           </div>
 
@@ -1540,37 +1551,37 @@ function EditPost() {
         {/* Sidebar Controls Section */}
         <div className="space-y-6">
           {/* Status & Category Panel */}
-          <div className="bg-white border border-neutral-200 rounded-2xl p-6 space-y-5 shadow-xs">
-            <h4 className="text-sm font-bold text-neutral-900 border-b border-neutral-100 pb-3">Status & Publishing</h4>
+          <div className="bg-white border border-neutral-200 rounded-2xl p-6 space-y-5 shadow-xs text-start">
+            <h4 className="text-sm font-bold text-neutral-900 border-b border-neutral-100 pb-3">{t("edit_status_title")}</h4>
             
             <div className="space-y-2">
-              <label className="text-xs font-bold text-neutral-700 uppercase tracking-wider block">Publication State</label>
+              <label className="text-xs font-bold text-neutral-700 uppercase tracking-wider block">{t("edit_status_label")}</label>
               <div className="grid grid-cols-2 gap-2">
                 <button
                   type="button"
                   onClick={() => setStatus("DRAFT")}
-                  className={`py-2 px-3 rounded-lg text-xs font-semibold border transition-all cursor-pointer ${status === "DRAFT" ? "bg-neutral-900 border-neutral-900 text-white" : "bg-neutral-50 border-neutral-200 text-neutral-600 hover:bg-neutral-100"}`}
+                  className={`py-2 px-3 rounded-lg text-xs font-semibold border transition-all cursor-pointer ${status === "DRAFT" ? "bg-neutral-900 border-neutral-900 text-white shadow-xs" : "bg-neutral-50 border-neutral-200 text-neutral-600 hover:bg-neutral-100"}`}
                 >
-                  Draft
+                  {t("edit_status_draft")}
                 </button>
                 <button
                   type="button"
                   onClick={() => setStatus("PUBLISHED")}
-                  className={`py-2 px-3 rounded-lg text-xs font-semibold border transition-all cursor-pointer ${status === "PUBLISHED" ? "bg-emerald-600 border-emerald-600 text-white shadow-sm" : "bg-neutral-50 border-neutral-200 text-neutral-600 hover:bg-neutral-100"}`}
+                  className={`py-2 px-3 rounded-lg text-xs font-semibold border transition-all cursor-pointer ${status === "PUBLISHED" ? "bg-emerald-600 border-emerald-600 text-white shadow-xs" : "bg-neutral-50 border-neutral-200 text-neutral-600 hover:bg-neutral-100"}`}
                 >
-                  Publish Now
+                  {t("edit_status_published")}
                 </button>
               </div>
             </div>
 
             <div className="space-y-1.5">
-              <label className="text-xs font-bold text-neutral-700 uppercase tracking-wider block">Category</label>
+              <label className="text-xs font-bold text-neutral-700 uppercase tracking-wider block">{t("edit_category_label")}</label>
               <select
                 value={categoryId}
                 onChange={(e) => setCategoryId(e.target.value)}
                 className="w-full text-sm bg-neutral-50 border border-neutral-200 rounded-lg px-3 py-2 focus:outline-none focus:border-brand focus:bg-white font-medium"
               >
-                <option value="">Uncategorized</option>
+                <option value="">{t("dashboard_uncategorized")}</option>
                 {categories.map(cat => (
                   <option key={cat.id} value={cat.id}>{cat.name}</option>
                 ))}
@@ -1578,7 +1589,7 @@ function EditPost() {
             </div>
 
             <div className="space-y-2">
-              <label className="text-xs font-bold text-neutral-700 uppercase tracking-wider block">Article Tags</label>
+              <label className="text-xs font-bold text-neutral-700 uppercase tracking-wider block">{t("edit_tags_label")}</label>
               <div className="flex flex-wrap gap-1.5">
                 {tags.map(tag => {
                   const selected = tagIds.includes(tag.id);
@@ -1598,41 +1609,41 @@ function EditPost() {
           </div>
 
           {/* SEO Metadata Settings */}
-          <div className="bg-white border border-neutral-200 rounded-2xl p-6 space-y-4 shadow-xs">
+          <div className="bg-white border border-neutral-200 rounded-2xl p-6 space-y-4 shadow-xs text-start">
             <h4 className="text-sm font-bold text-neutral-900 border-b border-neutral-100 pb-3 flex items-center">
-              <Settings className="w-4 h-4 mr-1.5 text-brand" /> SEO Meta Options
+              <Settings className="w-4 h-4 me-1.5 text-brand" /> {t("edit_seo_options")}
             </h4>
 
             <div className="space-y-1.5">
-              <label className="text-[10px] font-bold text-neutral-500 uppercase tracking-wider block">SEO Title</label>
+              <label className="text-[10px] font-bold text-neutral-500 uppercase tracking-wider block">{t("edit_seo_title")}</label>
               <input
                 type="text"
                 value={seoTitle}
                 onChange={(e) => setSeoTitle(e.target.value)}
                 placeholder="Google Search Title"
-                className="w-full text-xs bg-neutral-50 border border-neutral-200 rounded-lg px-2.5 py-2 focus:outline-none focus:border-brand focus:bg-white"
+                className="w-full text-xs bg-neutral-50 border border-neutral-200 rounded-lg px-2.5 py-2 focus:outline-none focus:border-brand focus:bg-white text-start"
               />
             </div>
 
             <div className="space-y-1.5">
-              <label className="text-[10px] font-bold text-neutral-500 uppercase tracking-wider block">SEO Description</label>
+              <label className="text-[10px] font-bold text-neutral-500 uppercase tracking-wider block">{t("edit_seo_description")}</label>
               <textarea
                 rows={3}
                 value={seoDescription}
                 onChange={(e) => setSeoDescription(e.target.value)}
                 placeholder="Google Snippet Description"
-                className="w-full text-xs bg-neutral-50 border border-neutral-200 rounded-lg px-2.5 py-2 focus:outline-none focus:border-brand focus:bg-white"
+                className="w-full text-xs bg-neutral-50 border border-neutral-200 rounded-lg px-2.5 py-2 focus:outline-none focus:border-brand focus:bg-white text-start"
               />
             </div>
 
             <div className="space-y-1.5">
-              <label className="text-[10px] font-bold text-neutral-500 uppercase tracking-wider block">OG Share Image URL</label>
+              <label className="text-[10px] font-bold text-neutral-500 uppercase tracking-wider block">{t("edit_og_image")}</label>
               <input
                 type="text"
                 value={ogImage}
                 onChange={(e) => setOgImage(e.target.value)}
                 placeholder="OpenGraph Link Image"
-                className="w-full text-xs bg-neutral-50 border border-neutral-200 rounded-lg px-2.5 py-2 focus:outline-none focus:border-brand focus:bg-white"
+                className="w-full text-xs bg-neutral-50 border border-neutral-200 rounded-lg px-2.5 py-2 focus:outline-none focus:border-brand focus:bg-white text-start"
               />
             </div>
           </div>
@@ -1641,17 +1652,17 @@ function EditPost() {
           <button
             type="submit"
             disabled={saving}
-            className="w-full py-3 px-4 bg-brand hover:bg-brand-hover text-white text-sm font-bold rounded-xl transition-all shadow-md cursor-pointer flex items-center justify-center space-x-1.5"
+            className="w-full py-3 px-4 bg-brand hover:bg-brand-hover text-white text-sm font-bold rounded-xl transition-all shadow-md cursor-pointer flex items-center justify-center gap-1.5"
           >
             {saving ? (
               <>
                 <RefreshCw className="w-4 h-4 animate-spin" />
-                <span>Saving updates...</span>
+                <span>{t("edit_saving")}</span>
               </>
             ) : (
               <>
                 <Check className="w-4 h-4" />
-                <span>Save Article Structure</span>
+                <span>{t("edit_save_btn")}</span>
               </>
             )}
           </button>
@@ -1668,58 +1679,60 @@ function EditPost() {
 export default function App() {
   return (
     <BrowserRouter>
-      <div className="min-h-screen bg-neutral-50 flex flex-col justify-between">
-        <div>
-          <Navbar />
-          <Routes>
-            <Route path="/" element={<BlogHome />} />
-            <Route path="/blog/:slug" element={<BlogPostView />} />
-            <Route path="/login" element={<Login />} />
-            
-            {/* Protected Admin Routes */}
-            <Route 
-              path="/admin" 
-              element={
-                <PrivateRoute>
-                  <AdminDashboard />
-                </PrivateRoute>
-              } 
-            />
-            <Route 
-              path="/admin/posts/new" 
-              element={
-                <PrivateRoute>
-                  <EditPost />
-                </PrivateRoute>
-              } 
-            />
-            <Route 
-              path="/admin/posts/edit/:id" 
-              element={
-                <PrivateRoute>
-                  <EditPost />
-                </PrivateRoute>
-              } 
-            />
-            
-            {/* Fallback */}
-            <Route path="*" element={<Navigate to="/" replace />} />
-          </Routes>
-        </div>
-
-        {/* Global Footer */}
-        <footer className="bg-white border-t border-neutral-150 py-8 mt-12">
-          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex flex-col sm:flex-row items-center justify-between gap-4">
-            <span className="text-xs text-neutral-400 font-medium">
-              © {new Date().getFullYear()} Betavan.ir. Developed by Betavan. All content and files are open.
-            </span>
-            <div className="flex space-x-5 text-xs font-mono">
-              <a href="/sitemap.xml" target="_blank" className="text-neutral-400 hover:text-neutral-700 transition-colors">sitemap.xml</a>
-              <a href="/robots.txt" target="_blank" className="text-neutral-400 hover:text-neutral-700 transition-colors">robots.txt</a>
-            </div>
+      <LanguageProvider>
+        <div className="min-h-screen bg-neutral-50 flex flex-col justify-between">
+          <div>
+            <Navbar />
+            <Routes>
+              <Route path="/" element={<BlogHome />} />
+              <Route path="/blog/:slug" element={<BlogPostView />} />
+              <Route path="/login" element={<Login />} />
+              
+              {/* Protected Admin Routes */}
+              <Route 
+                path="/admin" 
+                element={
+                  <PrivateRoute>
+                    <AdminDashboard />
+                  </PrivateRoute>
+                } 
+              />
+              <Route 
+                path="/admin/posts/new" 
+                element={
+                  <PrivateRoute>
+                    <EditPost />
+                  </PrivateRoute>
+                } 
+              />
+              <Route 
+                path="/admin/posts/edit/:id" 
+                element={
+                  <PrivateRoute>
+                    <EditPost />
+                  </PrivateRoute>
+                } 
+              />
+              
+              {/* Fallback */}
+              <Route path="*" element={<Navigate to="/" replace />} />
+            </Routes>
           </div>
-        </footer>
-      </div>
+
+          {/* Global Footer */}
+          <footer className="bg-white border-t border-neutral-150 py-8 mt-12">
+            <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex flex-col sm:flex-row items-center justify-between gap-4">
+              <span className="text-xs text-neutral-400 font-medium">
+                © {new Date().getFullYear()} Betavan.ir. Developed by Betavan. All content and files are open.
+              </span>
+              <div className="flex space-x-5 text-xs font-mono">
+                <a href="/sitemap.xml" target="_blank" className="text-neutral-400 hover:text-neutral-700 transition-colors">sitemap.xml</a>
+                <a href="/robots.txt" target="_blank" className="text-neutral-400 hover:text-neutral-700 transition-colors">robots.txt</a>
+              </div>
+            </div>
+          </footer>
+        </div>
+      </LanguageProvider>
     </BrowserRouter>
   );
 }

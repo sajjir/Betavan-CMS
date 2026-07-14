@@ -1,12 +1,18 @@
 import React from "react";
-import { Link, useNavigate } from "react-router-dom";
+import { Link, useNavigate, useLocation } from "react-router-dom";
 import { LogOut, User, Cpu, Compass } from "lucide-react";
+import { useLanguage } from "../admin-i18n.js";
 
 export function Navbar() {
   const navigate = useNavigate();
+  const location = useLocation();
+  const { locale, setLocale, t } = useLanguage();
+  
   const token = localStorage.getItem("accessToken");
   const userString = localStorage.getItem("user");
   const user = userString ? JSON.parse(userString) : null;
+
+  const isAdminOrLogin = location.pathname.startsWith("/admin") || location.pathname === "/login";
 
   const handleLogout = async () => {
     try {
@@ -26,7 +32,7 @@ export function Navbar() {
         <div className="flex items-center justify-between h-16">
           
           {/* Logo */}
-          <Link to="/" className="flex items-center space-x-2">
+          <Link to="/" className="flex items-center gap-2">
             <div className="w-8 h-8 rounded-lg bg-neutral-900 flex items-center justify-center text-white font-bold text-base font-display">
               B
             </div>
@@ -36,29 +42,44 @@ export function Navbar() {
           </Link>
 
           {/* Navigation Links */}
-          <nav className="hidden md:flex space-x-6">
+          <nav className="hidden md:flex gap-6">
             <Link to="/" className="text-sm font-medium text-neutral-600 hover:text-neutral-900 transition-colors flex items-center">
-              <Compass className="w-4 h-4 mr-1 text-neutral-400" /> Discover Blog
-            </Link>
-            <Link to="/ai-topics" className="text-sm font-medium text-neutral-600 hover:text-neutral-900 transition-colors flex items-center">
-              <Cpu className="w-4 h-4 mr-1 text-neutral-400" /> AI Topics
+              <Compass className="w-4 h-4 me-1.5 text-neutral-400" /> {t("nav_back_to_blog")}
             </Link>
           </nav>
 
           {/* Right Action */}
-          <div className="flex items-center space-x-3">
+          <div className="flex items-center gap-3">
+            {/* Always visible on admin pages, or if logged in */}
+            {isAdminOrLogin && (
+              <div className="flex items-center bg-neutral-100 rounded-lg p-0.5 border border-neutral-200">
+                <button
+                  onClick={() => setLocale("en")}
+                  className={`px-2 py-1 text-[10px] font-bold rounded-md transition-all ${locale === "en" ? "bg-neutral-900 text-white shadow-xs" : "text-neutral-500 hover:text-neutral-800"}`}
+                >
+                  EN
+                </button>
+                <button
+                  onClick={() => setLocale("fa")}
+                  className={`px-2 py-1 text-[10px] font-bold rounded-md transition-all font-sans ${locale === "fa" ? "bg-neutral-900 text-white shadow-xs" : "text-neutral-500 hover:text-neutral-800"}`}
+                >
+                  فا
+                </button>
+              </div>
+            )}
+
             {token && user ? (
-              <div className="flex items-center space-x-3.5">
+              <div className="flex items-center gap-3">
                 <Link 
                   to="/admin" 
                   className="inline-flex items-center text-xs font-semibold px-3.5 py-1.5 rounded-lg bg-neutral-100 hover:bg-neutral-200 text-neutral-800 transition-colors"
                 >
-                  <User className="w-3.5 h-3.5 mr-1 text-neutral-500" /> Admin Console
+                  <User className="w-3.5 h-3.5 me-1.5 text-neutral-500" /> {t("nav_console")}
                 </Link>
                 <button
                   onClick={handleLogout}
                   className="p-1.5 rounded-lg text-neutral-400 hover:text-red-600 hover:bg-red-50 transition-colors"
-                  title="Logout"
+                  title={t("nav_logout")}
                 >
                   <LogOut className="w-4.5 h-4.5" />
                 </button>
@@ -68,7 +89,7 @@ export function Navbar() {
                 to="/login"
                 className="inline-flex items-center justify-center px-4 py-2 rounded-lg bg-neutral-900 text-white font-semibold text-xs hover:bg-brand transition-colors shadow-sm cursor-pointer"
               >
-                Log In
+                {t("login_btn")}
               </Link>
             )}
           </div>
@@ -78,3 +99,4 @@ export function Navbar() {
     </header>
   );
 }
+
