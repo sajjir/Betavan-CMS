@@ -33,6 +33,10 @@ import { BlockEditor } from "./components/BlockEditor.js";
 import { LanguageProvider, useLanguage } from "./i18n.js";
 import { AdminCategories } from "./components/AdminCategories.js";
 import { AdminSettings } from "./components/AdminSettings.js";
+import { AdminTags } from "./components/AdminTags.js";
+import { AdminPages } from "./components/AdminPages.js";
+import { EditPage } from "./components/EditPage.js";
+import { PageView } from "./components/PageView.js";
 
 // Helper to check auth
 const isAuthenticated = () => !!localStorage.getItem("accessToken");
@@ -1786,6 +1790,39 @@ export default function App() {
                   </PrivateRoute>
                 } 
               />
+              <Route 
+                path="/admin/tags" 
+                element={
+                  <PrivateRoute>
+                    <AdminTags />
+                  </PrivateRoute>
+                } 
+              />
+              <Route 
+                path="/admin/pages" 
+                element={
+                  <PrivateRoute>
+                    <AdminPages />
+                  </PrivateRoute>
+                } 
+              />
+              <Route 
+                path="/admin/pages/new" 
+                element={
+                  <PrivateRoute>
+                    <EditPage />
+                  </PrivateRoute>
+                } 
+              />
+              <Route 
+                path="/admin/pages/edit/:id" 
+                element={
+                  <PrivateRoute>
+                    <EditPage />
+                  </PrivateRoute>
+                } 
+              />
+              <Route path="/page/:slug" element={<PageView />} />
               
               {/* Fallback */}
               <Route path="*" element={<Navigate to="/" replace />} />

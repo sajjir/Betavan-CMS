@@ -1,6 +1,22 @@
 import { Request, Response } from "express";
 import { prisma } from "../db.js";
 
+export async function getPages(req: Request, res: Response) {
+  try {
+    const pages = await prisma.page.findMany({
+      orderBy: { updatedAt: "desc" }
+    });
+    const parsedPages = pages.map(p => ({
+      ...p,
+      blocks: JSON.parse(p.blocks)
+    }));
+    return res.json(parsedPages);
+  } catch (error) {
+    console.error("Get pages error:", error);
+    return res.status(500).json({ error: "Internal server error" });
+  }
+}
+
 export async function getPageBySlug(req: Request, res: Response) {
   try {
     const { slug } = req.params;
@@ -53,6 +69,28 @@ export async function upsertPage(req: Request, res: Response) {
     });
   } catch (error) {
     console.error("Upsert page error:", error);
+    return res.status(500).json({ error: "Internal server error" });
+  }
+}
+
+export async function deletePage(req: Request, res: Response) {
+  try {
+    const { id } = req.params;
+    const page = await prisma.page.findUnique({
+      where: { id }
+    });
+
+    if (!page) {
+      return res.status(404).json({ error: "Page not found" });
+    }
+
+    await prisma.page.delete({
+      where: { id }
+    });
+
+    return res.json({ message: "Page deleted successfully" });
+  } catch (error) {
+    console.error("Delete page error:", error);
     return res.status(500).json({ error: "Internal server error" });
   }
 }

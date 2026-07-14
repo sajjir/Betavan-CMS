@@ -55,6 +55,12 @@ export function Navbar() {
                 <Link to="/admin/categories" className="text-sm font-semibold text-neutral-600 hover:text-neutral-900 transition-colors">
                   {t("nav_admin_categories")}
                 </Link>
+                <Link to="/admin/tags" className="text-sm font-semibold text-neutral-600 hover:text-neutral-900 transition-colors">
+                  {t("nav_admin_tags")}
+                </Link>
+                <Link to="/admin/pages" className="text-sm font-semibold text-neutral-600 hover:text-neutral-900 transition-colors">
+                  {t("nav_admin_pages")}
+                </Link>
                 <Link to="/admin/settings" className="text-sm font-semibold text-neutral-600 hover:text-neutral-900 transition-colors">
                   {t("nav_admin_settings")}
                 </Link>

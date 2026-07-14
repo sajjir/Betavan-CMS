@@ -72,6 +72,8 @@ app.delete("/api/categories/:id", authenticate, requireRole(["ADMIN", "EDITOR"])
 // Tags Module
 app.get("/api/tags", postController.getTags);
 app.post("/api/tags", authenticate, requireRole(["ADMIN", "EDITOR"]), postController.createTag);
+app.put("/api/tags/:id", authenticate, requireRole(["ADMIN", "EDITOR"]), postController.updateTag);
+app.delete("/api/tags/:id", authenticate, requireRole(["ADMIN", "EDITOR"]), postController.deleteTag);
 
 // Posts Module
 app.get("/api/posts", postController.getPosts);
@@ -84,8 +86,10 @@ app.delete("/api/posts/:id", authenticate, requireRole(["ADMIN", "EDITOR"]), pos
 app.get("/downloads/:blockId", postController.handleDownload);
 
 // Pages Module (Static pages)
+app.get("/api/pages", authenticate, requireRole(["ADMIN", "EDITOR"]), pageController.getPages);
 app.get("/api/pages/:slug", pageController.getPageBySlug);
 app.post("/api/pages", authenticate, requireRole(["ADMIN", "EDITOR"]), pageController.upsertPage);
+app.delete("/api/pages/:id", authenticate, requireRole(["ADMIN", "EDITOR"]), pageController.deletePage);
 
 // Media Module
 app.get("/api/media", authenticate, requireRole(["ADMIN", "EDITOR"]), mediaController.getMedia);
