@@ -1,0 +1,6 @@
+{
+  "name": "Betavan CMS",
+  "description": "A minimal, modern content management system for AI and business topics, with support for blog posts, Aparat video embeds, free downloads, and code snippets.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}

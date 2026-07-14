@@ -1,0 +1,124 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+// NOTE FOR PRODUCTION DEPLOYMENT:
+// For the local developer preview sandbox, we use the "sqlite" provider because it runs
+// instantly inside the container with zero external setup, configuration, or database credentials.
+//
+// When deploying to your Ubuntu VPS with PostgreSQL, simply:
+// 1. Change provider from "sqlite" to "postgresql"
+// 2. Change the url from "file:./dev.db" to env("DATABASE_URL")
+// 3. Re-enable PostgreSQL-specific "enum" declarations if desired, or keep them as string fields
+//    (which is fully compatible and standard).
+
+datasource db {
+  provider = "sqlite"
+  url      = "file:./dev.db"
+}
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+model User {
+  id           String   @id @default(cuid())
+  email        String   @unique
+  passwordHash String
+  name         String
+  role         String   @default("EDITOR") // "ADMIN" or "EDITOR"
+  createdAt    DateTime @default(now())
+  posts        Post[]
+}
+
+model Post {
+  id             String      @id @default(cuid())
+  title          String
+  slug           String      @unique
+  excerpt        String?
+  status         String      @default("DRAFT") // "DRAFT", "PUBLISHED", "SCHEDULED"
+  publishedAt    DateTime?
+  coverImage     String?
+  seoTitle       String?
+  seoDescription String?
+  ogImage        String?
+  categoryId     String?
+  category       Category?   @relation(fields: [categoryId], references: [id])
+  tags           Tag[]       @relation("PostTags")
+  blocks         PostBlock[]
+  authorId       String
+  author         User        @relation(fields: [authorId], references: [id])
+  createdAt      DateTime    @default(now())
+  updatedAt      DateTime    @updatedAt
+}
+
+model PostBlock {
+  id     String @id @default(cuid())
+  postId String
+  post   Post   @relation(fields: [postId], references: [id])
+  type   String // "RICH_TEXT", "IMAGE", "APARAT_EMBED", "CODE_SNIPPET", "DOWNLOAD_BOX"
+  order  Int
+  data   String // JSON stringified for simple SQLite storage, parsed back at runtime
+}
+
+model Category {
+  id    String @id @default(cuid())
+  name  String
+  slug  String @unique
+  posts Post[]
+}
+
+model Tag {
+  id    String @id @default(cuid())
+  name  String
+  slug  String @unique
+  posts Post[] @relation("PostTags")
+}
+
+model Page {
+  id             String   @id @default(cuid())
+  title          String
+  slug           String   @unique
+  seoTitle       String?
+  seoDescription String?
+  blocks         String   // JSON stringified block data
+  updatedAt      DateTime @updatedAt
+}
+
+model Media {
+  id        String   @id @default(cuid())
+  filename  String
+  url       String
+  folder    String?
+  tags      String   // Stored as a comma-separated string or JSON for SQLite compatibility
+  altText   String?
+  createdAt DateTime @default(now())
+}
+
+model Product {
+  id          String   @id @default(cuid())
+  title       String
+  slug        String   @unique
+  price       Int
+  description String?
+  status      String   @default("draft")
+  categoryId  String?
+  createdAt   DateTime @default(now())
+}
+
+model Order {
+  id         String      @id @default(cuid())
+  status     String      @default("pending")
+  total      Int
+  customerId String?
+  items      OrderItem[]
+  createdAt  DateTime    @default(now())
+}
+
+model OrderItem {
+  id        String @id @default(cuid())
+  orderId   String
+  order     Order  @relation(fields: [orderId], references: [id])
+  productId String
+  quantity  Int
+  price     Int
+}
