@@ -183,7 +183,7 @@ export async function updateTerm(req: Request, res: Response) {
 export async function deleteTerm(req: Request, res: Response) {
   try {
     const { id } = req.params;
-    const { reassignTo } = req.body;
+    const reassignTo = req.body.reassignTo || req.body.reassignTermId;
 
     const existing = await prisma.term.findUnique({
       where: { id },
