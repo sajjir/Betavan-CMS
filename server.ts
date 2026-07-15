@@ -54,8 +54,12 @@ import * as orderController from "./src/server/controllers/orderController.js";
 import * as webhookController from "./src/server/controllers/webhookController.js";
 import * as aiController from "./src/server/controllers/aiController.js";
 import * as taxonomyController from "./src/server/controllers/taxonomyController.js";
+import * as searchController from "./src/server/controllers/searchController.js";
 
 // --- API ROUTES ---
+
+// Search Endpoint
+app.get("/api/search", searchController.search);
 
 // SEO Endpoints
 app.get("/sitemap.xml", seoController.getSitemap);

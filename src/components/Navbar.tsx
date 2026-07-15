@@ -1,16 +1,24 @@
 import React from "react";
 import { Link, useNavigate, useLocation } from "react-router-dom";
-import { LogOut, User, Cpu, Compass } from "lucide-react";
+import { LogOut, User, Cpu, Compass, Search } from "lucide-react";
 import { useLanguage } from "../i18n.js";
 
 export function Navbar() {
   const navigate = useNavigate();
   const location = useLocation();
   const { locale, setLocale, t } = useLanguage();
+  const [searchQuery, setSearchQuery] = React.useState("");
   
   const token = localStorage.getItem("accessToken");
   const userString = localStorage.getItem("user");
   const user = userString ? JSON.parse(userString) : null;
+
+  const handleSearchSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (searchQuery.trim()) {
+      navigate(`/search?q=${encodeURIComponent(searchQuery.trim())}`);
+    }
+  };
 
   const isAdminOrLogin = location.pathname.startsWith("/admin") || location.pathname === "/login";
 
@@ -32,14 +40,31 @@ export function Navbar() {
         <div className="flex items-center justify-between h-16">
           
           {/* Logo */}
-          <Link to="/" className="flex items-center gap-2">
+          <Link to="/" className="flex items-center gap-2 shrink-0">
             <div className="w-8 h-8 rounded-lg bg-neutral-900 flex items-center justify-center text-white font-bold text-base font-display">
               B
             </div>
-            <span className="text-lg font-bold text-neutral-900 font-display tracking-tight hover:text-brand transition-colors">
+            <span className="text-lg font-bold text-neutral-900 font-display tracking-tight hover:text-brand transition-colors hidden xs:inline">
               Betavan <span className="text-brand font-mono text-sm font-medium">CMS</span>
             </span>
           </Link>
+
+          {/* Search Input Form */}
+          <form onSubmit={handleSearchSubmit} className="flex-1 max-w-[140px] xs:max-w-[180px] sm:max-w-xs relative mx-2 sm:mx-4">
+            <input
+              type="text"
+              placeholder={t("search_placeholder")}
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              className="w-full bg-neutral-50 hover:bg-neutral-100 focus:bg-white text-xs px-3 py-1.5 rounded-lg border border-neutral-200 focus:border-neutral-900 focus:outline-none transition-all font-sans"
+              dir={locale === "fa" ? "rtl" : "ltr"}
+              style={{
+                paddingLeft: locale === "fa" ? "12px" : "28px",
+                paddingRight: locale === "fa" ? "28px" : "12px",
+              }}
+            />
+            <Search className={`w-3.5 h-3.5 text-neutral-400 absolute top-1/2 -translate-y-1/2 ${locale === "fa" ? "right-2.5" : "left-2.5"}`} />
+          </form>
 
           {/* Navigation Links */}
           <nav className="hidden md:flex gap-6 items-center">

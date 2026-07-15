@@ -45,6 +45,7 @@ import { ProductDetail } from "./components/ProductDetail.js";
 import { setPageSeo, clearJsonLd, getArticleSchema, getBreadcrumbSchema, getOrganizationSchema } from "./lib/seo.js";
 import { Checkout } from "./components/Checkout.js";
 import { OrderResult } from "./components/OrderResult.js";
+import { SearchResults } from "./components/SearchResults.js";
 
 // Helper to check auth
 const isAuthenticated = () => !!localStorage.getItem("accessToken");
@@ -2262,6 +2263,7 @@ export default function App() {
               <Route path="/checkout" element={<Checkout />} />
               <Route path="/order-result/:orderId" element={<OrderResult />} />
               <Route path="/login" element={<Login />} />
+              <Route path="/search" element={<SearchResults />} />
               
               {/* Protected Admin Routes */}
               <Route 

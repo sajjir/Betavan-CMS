@@ -188,6 +188,12 @@ export const translations = {
     "block_unknown_size": "Unknown Size",
     "block_downloads_count": "downloads",
     "footer_copyright": "Developed by Betavan. All content and files are open.",
+    "search_placeholder": "Search site...",
+    "search_results_title": "Search Results",
+    "search_results_for": "Search results for: \"{query}\"",
+    "search_no_results": "No results found for your query. Try searching for something else.",
+    "search_type_post": "Article",
+    "search_type_product": "Product",
 
     // Custom Category Management & Settings Admin UI
     "nav_admin_posts": "Posts",
@@ -486,6 +492,12 @@ export const translations = {
     "block_unknown_size": "حجم نامشخص",
     "block_downloads_count": "دانلود",
     "footer_copyright": "توسعه‌یافته توسط بتوان. تمامی محتوا و فایل‌ها منبع‌باز و آزاد هستند.",
+    "search_placeholder": "جستجوی سایت...",
+    "search_results_title": "نتایج جستجو",
+    "search_results_for": "نتایج جستجو برای: «{query}»",
+    "search_no_results": "نتیجه‌ای برای جستجوی شما یافت نشد. عبارت دیگری را جستجو کنید.",
+    "search_type_post": "مقاله",
+    "search_type_product": "محصول",
 
     // Custom Category Management & Settings Admin UI
     "nav_admin_posts": "پست‌ها",
