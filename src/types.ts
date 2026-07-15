@@ -18,6 +18,28 @@ export interface Tag {
   slug: string;
 }
 
+export interface Taxonomy {
+  id: string;
+  key: string;
+  name: string;
+  nameFa?: string;
+  hierarchical: boolean;
+  urlPrefix: string;
+}
+
+export interface Term {
+  id: string;
+  taxonomyId: string;
+  taxonomy?: Taxonomy;
+  name: string;
+  nameFa?: string | null;
+  slug: string;
+  description?: string | null;
+  seoTitle?: string | null;
+  seoDescription?: string | null;
+  parentId?: string | null;
+}
+
 export interface PostBlock {
   id?: string;
   type: "RICH_TEXT" | "IMAGE" | "APARAT_EMBED" | "CODE_SNIPPET" | "DOWNLOAD_BOX";
@@ -37,8 +59,11 @@ export interface Post {
   seoDescription?: string;
   ogImage?: string;
   categoryId?: string;
-  category?: Category;
-  tags: Tag[];
+  category?: Term | null;
+  tags: Term[];
+  contentType?: Term | null;
+  skillLevel?: Term | null;
+  terms?: Term[];
   blocks: PostBlock[];
   authorId: string;
   author: {
@@ -80,7 +105,7 @@ export interface Product {
   coverImage?: string | null;
   status: "draft" | "published";
   categoryId?: string | null;
-  category?: Category | null;
+  category?: Term | null;
   createdAt: string;
 }
 

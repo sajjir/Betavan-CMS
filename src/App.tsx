@@ -31,9 +31,8 @@ import { Navbar } from "./components/Navbar.js";
 import { BlockRenderer } from "./components/BlockRenderer.js";
 import { BlockEditor } from "./components/BlockEditor.js";
 import { LanguageProvider, useLanguage } from "./i18n.js";
-import { AdminCategories } from "./components/AdminCategories.js";
+import { AdminTaxonomies } from "./components/AdminTaxonomies.js";
 import { AdminSettings } from "./components/AdminSettings.js";
-import { AdminTags } from "./components/AdminTags.js";
 import { AdminPages } from "./components/AdminPages.js";
 import { EditPage } from "./components/EditPage.js";
 import { PageView } from "./components/PageView.js";
@@ -2277,7 +2276,15 @@ export default function App() {
                 path="/admin/categories" 
                 element={
                   <PrivateRoute>
-                    <AdminCategories />
+                    <AdminTaxonomies />
+                  </PrivateRoute>
+                } 
+              />
+              <Route 
+                path="/admin/taxonomies" 
+                element={
+                  <PrivateRoute>
+                    <AdminTaxonomies />
                   </PrivateRoute>
                 } 
               />
@@ -2309,7 +2316,7 @@ export default function App() {
                 path="/admin/tags" 
                 element={
                   <PrivateRoute>
-                    <AdminTags />
+                    <AdminTaxonomies />
                   </PrivateRoute>
                 } 
               />

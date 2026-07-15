@@ -5,14 +5,21 @@ export async function getSitemap(req: Request, res: Response) {
   try {
     const appUrl = process.env.APP_URL || "https://betavan.ir";
 
-    // Fetch published posts and static pages
-    const [posts, pages] = await Promise.all([
+    // Fetch published posts, static pages, terms, and products
+    const [posts, pages, terms, products] = await Promise.all([
       prisma.post.findMany({
         where: { status: "PUBLISHED" },
         select: { slug: true, updatedAt: true }
       }),
       prisma.page.findMany({
         select: { slug: true, updatedAt: true }
+      }),
+      prisma.term.findMany({
+        include: { taxonomy: true }
+      }),
+      prisma.product.findMany({
+        where: { status: "published" },
+        select: { slug: true, createdAt: true }
       })
     ]);
 
@@ -43,6 +50,26 @@ export async function getSitemap(req: Request, res: Response) {
       xml += `    <lastmod>${page.updatedAt.toISOString().split("T")[0]}</lastmod>\n`;
       xml += `    <changefreq>monthly</changefreq>\n`;
       xml += `    <priority>0.5</priority>\n`;
+      xml += `  </url>\n`;
+    });
+
+    // Add terms (Archive pages)
+    terms.forEach(term => {
+      const prefix = term.taxonomy?.urlPrefix || "category";
+      xml += `  <url>\n`;
+      xml += `    <loc>${appUrl}/${prefix}/${term.slug}</loc>\n`;
+      xml += `    <changefreq>weekly</changefreq>\n`;
+      xml += `    <priority>0.6</priority>\n`;
+      xml += `  </url>\n`;
+    });
+
+    // Add products
+    products.forEach(product => {
+      xml += `  <url>\n`;
+      xml += `    <loc>${appUrl}/product/${product.slug}</loc>\n`;
+      xml += `    <lastmod>${product.createdAt.toISOString().split("T")[0]}</lastmod>\n`;
+      xml += `    <changefreq>weekly</changefreq>\n`;
+      xml += `    <priority>0.7</priority>\n`;
       xml += `  </url>\n`;
     });
 

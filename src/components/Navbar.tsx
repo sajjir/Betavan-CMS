@@ -61,11 +61,8 @@ export function Navbar() {
                 <Link to="/admin/orders" className="text-sm font-semibold text-neutral-600 hover:text-neutral-900 transition-colors">
                   {locale === "fa" ? "سفارش‌ها" : "Orders"}
                 </Link>
-                <Link to="/admin/categories" className="text-sm font-semibold text-neutral-600 hover:text-neutral-900 transition-colors">
-                  {t("nav_admin_categories")}
-                </Link>
-                <Link to="/admin/tags" className="text-sm font-semibold text-neutral-600 hover:text-neutral-900 transition-colors">
-                  {t("nav_admin_tags")}
+                <Link to="/admin/taxonomies" className="text-sm font-semibold text-neutral-600 hover:text-neutral-900 transition-colors">
+                  {locale === "fa" ? "طبقه‌بندی‌ها" : "Taxonomies"}
                 </Link>
                 <Link to="/admin/pages" className="text-sm font-semibold text-neutral-600 hover:text-neutral-900 transition-colors">
                   {t("nav_admin_pages")}

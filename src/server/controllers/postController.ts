@@ -29,10 +29,29 @@ function slugify(text: string): string {
     .replace(/-+$/, ""); // Trim - from end
 }
 
+// Helper to map term relations to flat objects
+export function mapPostTerms(post: any) {
+  if (!post) return null;
+  const termsList = post.terms?.map((pt: any) => pt.term) || [];
+  const category = termsList.find((t: any) => t.taxonomy?.key === "category") || null;
+  const tags = termsList.filter((t: any) => t.taxonomy?.key === "tag");
+  const contentType = termsList.find((t: any) => t.taxonomy?.key === "content_type") || null;
+  const skillLevel = termsList.find((t: any) => t.taxonomy?.key === "skill_level") || null;
+
+  return {
+    ...post,
+    category,
+    tags,
+    contentType,
+    skillLevel,
+    terms: termsList
+  };
+}
+
 // Post CRUD
 export async function getPosts(req: Request, res: Response) {
   try {
-    const { categorySlug, tagSlug, status, page = "1", limit = "10" } = req.query;
+    const { categorySlug, tagSlug, taxonomyPrefix, termSlug, status, page = "1", limit = "10" } = req.query;
     const pageNum = parseInt(String(page)) || 1;
     const limitNum = parseInt(String(limit)) || 10;
     const skip = (pageNum - 1) * limitNum;
@@ -46,20 +65,63 @@ export async function getPosts(req: Request, res: Response) {
       where.status = "PUBLISHED";
     }
 
+    const andConditions: any[] = [];
     if (categorySlug) {
-      where.category = { slug: String(categorySlug) };
+      andConditions.push({
+        terms: {
+          some: {
+            term: {
+              slug: String(categorySlug),
+              taxonomy: { key: "category" }
+            }
+          }
+        }
+      });
     }
 
     if (tagSlug) {
-      where.tags = { some: { slug: String(tagSlug) } };
+      andConditions.push({
+        terms: {
+          some: {
+            term: {
+              slug: String(tagSlug),
+              taxonomy: { key: "tag" }
+            }
+          }
+        }
+      });
+    }
+
+    if (taxonomyPrefix && termSlug) {
+      andConditions.push({
+        terms: {
+          some: {
+            term: {
+              slug: String(termSlug),
+              taxonomy: { urlPrefix: String(taxonomyPrefix) }
+            }
+          }
+        }
+      });
+    }
+
+    if (andConditions.length > 0) {
+      where.AND = andConditions;
     }
 
     const [posts, total] = await Promise.all([
       prisma.post.findMany({
         where,
         include: {
-          category: true,
-          tags: true,
+          terms: {
+            include: {
+              term: {
+                include: {
+                  taxonomy: true
+                }
+              }
+            }
+          },
           author: {
             select: { id: true, name: true, email: true, role: true }
           },
@@ -67,24 +129,27 @@ export async function getPosts(req: Request, res: Response) {
             orderBy: { order: "asc" }
           }
         },
-        orderBy: { publishedAt: "desc" },
+        orderBy: { createdAt: "desc" },
         skip,
         take: limitNum
       }),
       prisma.post.count({ where })
     ]);
 
-    // Parse the blocks' serialized JSON
-    const postsWithParsedBlocks = posts.map(post => ({
-      ...post,
-      blocks: post.blocks.map(block => ({
-        ...block,
-        data: JSON.parse(block.data)
-      }))
-    }));
+    // Parse blocks and map terms
+    const mappedPosts = posts.map(post => {
+      const mapped = mapPostTerms(post);
+      return {
+        ...mapped,
+        blocks: post.blocks.map(block => ({
+          ...block,
+          data: JSON.parse(block.data)
+        }))
+      };
+    });
 
     return res.json({
-      posts: postsWithParsedBlocks,
+      posts: mappedPosts,
       pagination: {
         total,
         page: pageNum,
@@ -104,8 +169,15 @@ export async function getPostBySlug(req: Request, res: Response) {
     const post = await prisma.post.findUnique({
       where: { slug },
       include: {
-        category: true,
-        tags: true,
+        terms: {
+          include: {
+            term: {
+              include: {
+                taxonomy: true
+              }
+            }
+          }
+        },
         author: {
           select: { id: true, name: true, email: true, role: true }
         },
@@ -119,8 +191,9 @@ export async function getPostBySlug(req: Request, res: Response) {
       return res.status(404).json({ error: "Post not found" });
     }
 
+    const mapped = mapPostTerms(post);
     const postWithParsedBlocks = {
-      ...post,
+      ...mapped,
       blocks: post.blocks.map(block => ({
         ...block,
         data: JSON.parse(block.data)
@@ -145,8 +218,11 @@ export async function createPost(req: AuthenticatedRequest, res: Response) {
       seoTitle,
       seoDescription,
       ogImage,
+      termIds = [], // Explicit array of all selected term IDs
       categoryId,
-      tagIds = [], // Array of tag IDs
+      tagIds,
+      contentTypeId,
+      skillLevelId,
       blocks = [] // Array of block objects { type, data, order }
     } = req.body;
 
@@ -172,6 +248,17 @@ export async function createPost(req: AuthenticatedRequest, res: Response) {
 
     const publishedAt = status === "PUBLISHED" ? new Date() : null;
 
+    // Consolidate term ids
+    let consolidatedTermIds: string[] = [];
+    if (Array.isArray(termIds) && termIds.length > 0) {
+      consolidatedTermIds = [...termIds];
+    } else {
+      if (categoryId) consolidatedTermIds.push(categoryId);
+      if (contentTypeId) consolidatedTermIds.push(contentTypeId);
+      if (skillLevelId) consolidatedTermIds.push(skillLevelId);
+      if (Array.isArray(tagIds)) consolidatedTermIds.push(...tagIds);
+    }
+
     const post = await prisma.post.create({
       data: {
         title,
@@ -184,9 +271,10 @@ export async function createPost(req: AuthenticatedRequest, res: Response) {
         seoDescription: seoDescription || excerpt,
         ogImage: ogImage || coverImage,
         authorId,
-        categoryId: categoryId || null,
-        tags: {
-          connect: tagIds.map((id: string) => ({ id }))
+        terms: {
+          create: consolidatedTermIds.map(termId => ({
+            term: { connect: { id: termId } }
+          }))
         }
       }
     });
@@ -207,16 +295,24 @@ export async function createPost(req: AuthenticatedRequest, res: Response) {
     const finalPost = await prisma.post.findUnique({
       where: { id: post.id },
       include: {
-        category: true,
-        tags: true,
+        terms: {
+          include: {
+            term: {
+              include: {
+                taxonomy: true
+              }
+            }
+          }
+        },
         blocks: {
           orderBy: { order: "asc" }
         }
       }
     });
 
+    const mapped = mapPostTerms(finalPost);
     const parsedPost = {
-      ...finalPost,
+      ...mapped,
       blocks: finalPost?.blocks.map(block => ({
         ...block,
         data: JSON.parse(block.data)
@@ -246,14 +342,19 @@ export async function updatePost(req: AuthenticatedRequest, res: Response) {
       seoTitle,
       seoDescription,
       ogImage,
+      termIds,
       categoryId,
       tagIds,
+      contentTypeId,
+      skillLevelId,
       blocks
     } = req.body;
 
     const existingPost = await prisma.post.findUnique({
       where: { id },
-      include: { tags: true }
+      include: {
+        terms: true
+      }
     });
 
     if (!existingPost) {
@@ -280,16 +381,52 @@ export async function updatePost(req: AuthenticatedRequest, res: Response) {
     if (seoTitle !== undefined) updateData.seoTitle = seoTitle;
     if (seoDescription !== undefined) updateData.seoDescription = seoDescription;
     if (ogImage !== undefined) updateData.ogImage = ogImage;
-    
-    if (categoryId !== undefined) {
-      updateData.categoryId = categoryId || null;
+
+    // Handle terms updates
+    let shouldUpdateTerms = false;
+    let consolidatedTermIds: string[] = [];
+
+    if (termIds !== undefined) {
+      shouldUpdateTerms = true;
+      consolidatedTermIds = [...termIds];
+    } else if (categoryId !== undefined || tagIds !== undefined || contentTypeId !== undefined || skillLevelId !== undefined) {
+      shouldUpdateTerms = true;
+      // Get existing ones to keep what is not modified
+      const existingTermIds = existingPost.terms.map(t => t.termId);
+      // We will need to query them to find their taxonomies if we want fine-grained merge, but simplest is to fetch all assigned term ids, find their taxonomy, and replace the modified ones.
+      // However, the post editor UI will send the full list of consolidated `termIds` or specific ones.
+      // Let's implement full rebuild from what's passed, and use existing for what's omitted:
+      const existingTermsWithTax = await prisma.term.findMany({
+        where: { id: { in: existingTermIds } },
+        include: { taxonomy: true }
+      });
+
+      const oldCat = existingTermsWithTax.find(t => t.taxonomy.key === "category")?.id;
+      const oldType = existingTermsWithTax.find(t => t.taxonomy.key === "content_type")?.id;
+      const oldLevel = existingTermsWithTax.find(t => t.taxonomy.key === "skill_level")?.id;
+      const oldTags = existingTermsWithTax.filter(t => t.taxonomy.key === "tag").map(t => t.id);
+
+      const finalCat = categoryId !== undefined ? categoryId : oldCat;
+      const finalType = contentTypeId !== undefined ? contentTypeId : oldType;
+      const finalLevel = skillLevelId !== undefined ? skillLevelId : oldLevel;
+      const finalTags = tagIds !== undefined ? tagIds : oldTags;
+
+      if (finalCat) consolidatedTermIds.push(finalCat);
+      if (finalType) consolidatedTermIds.push(finalType);
+      if (finalLevel) consolidatedTermIds.push(finalLevel);
+      if (Array.isArray(finalTags)) consolidatedTermIds.push(...finalTags);
     }
 
-    // Connect/Disconnect tags
-    if (tagIds !== undefined) {
-      updateData.tags = {
-        disconnect: existingPost.tags.map(t => ({ id: t.id })),
-        connect: tagIds.map((id: string) => ({ id }))
+    if (shouldUpdateTerms) {
+      // Clear all existing associations
+      await prisma.postTerm.deleteMany({
+        where: { postId: id }
+      });
+
+      updateData.terms = {
+        create: consolidatedTermIds.map(termId => ({
+          term: { connect: { id: termId } }
+        }))
       };
     }
 
@@ -324,16 +461,24 @@ export async function updatePost(req: AuthenticatedRequest, res: Response) {
     const finalPost = await prisma.post.findUnique({
       where: { id },
       include: {
-        category: true,
-        tags: true,
+        terms: {
+          include: {
+            term: {
+              include: {
+                taxonomy: true
+              }
+            }
+          }
+        },
         blocks: {
           orderBy: { order: "asc" }
         }
       }
     });
 
+    const mapped = mapPostTerms(finalPost);
     const parsedPost = {
-      ...finalPost,
+      ...mapped,
       blocks: finalPost?.blocks.map(block => ({
         ...block,
         data: JSON.parse(block.data)
@@ -359,6 +504,11 @@ export async function deletePost(req: AuthenticatedRequest, res: Response) {
       return res.status(404).json({ error: "Post not found" });
     }
 
+    // Delete post terms relations first (foreign key constraint)
+    await prisma.postTerm.deleteMany({
+      where: { postId: id }
+    });
+
     // Delete post blocks first (foreign key constraint)
     await prisma.postBlock.deleteMany({
       where: { postId: id }
@@ -371,219 +521,6 @@ export async function deletePost(req: AuthenticatedRequest, res: Response) {
     return res.json({ message: "Post deleted successfully" });
   } catch (error: any) {
     console.error("Delete post error:", error);
-    return res.status(500).json({ error: "Internal server error" });
-  }
-}
-
-// Category CRUD
-export async function getCategories(req: Request, res: Response) {
-  try {
-    const categories = await prisma.category.findMany({
-      orderBy: { name: "asc" }
-    });
-    return res.json(categories);
-  } catch (error) {
-    return res.status(500).json({ error: "Internal server error" });
-  }
-}
-
-export async function createCategory(req: Request, res: Response) {
-  try {
-    const { name, slug, parentId } = req.body;
-    if (!name) {
-      return res.status(400).json({ error: "Category name is required" });
-    }
-
-    const catSlug = slug ? slugify(slug) : slugify(name);
-
-    const category = await prisma.category.create({
-      data: {
-        name,
-        slug: catSlug,
-        parentId: parentId || null
-      }
-    });
-
-    return res.status(201).json(category);
-  } catch (error) {
-    console.error("Create category error:", error);
-    return res.status(500).json({ error: "Internal server error" });
-  }
-}
-
-export async function updateCategory(req: Request, res: Response) {
-  try {
-    const { id } = req.params;
-    const { name, slug, parentId } = req.body;
-
-    const existingCategory = await prisma.category.findUnique({
-      where: { id }
-    });
-
-    if (!existingCategory) {
-      return res.status(404).json({ error: "Category not found" });
-    }
-
-    const updateData: any = {};
-    if (name !== undefined) updateData.name = name;
-    if (slug !== undefined) updateData.slug = slugify(slug);
-    
-    if (parentId !== undefined) {
-      if (parentId) {
-        // Prevent setting parent to itself
-        if (parentId === id) {
-          return res.status(400).json({ error: "A category cannot be its own parent" });
-        }
-        
-        // Prevent circular reference (walking up parentId chain)
-        let currParentId = parentId;
-        while (currParentId) {
-          if (currParentId === id) {
-            return res.status(400).json({ error: "Circular reference detected" });
-          }
-          const parentCat = await prisma.category.findUnique({
-            where: { id: currParentId },
-            select: { parentId: true }
-          });
-          if (!parentCat) break;
-          currParentId = parentCat.parentId;
-        }
-        
-        updateData.parentId = parentId;
-      } else {
-        updateData.parentId = null;
-      }
-    }
-
-    const updatedCategory = await prisma.category.update({
-      where: { id },
-      data: updateData
-    });
-
-    return res.json(updatedCategory);
-  } catch (error) {
-    console.error("Update category error:", error);
-    return res.status(500).json({ error: "Internal server error" });
-  }
-}
-
-export async function deleteCategory(req: Request, res: Response) {
-  try {
-    const { id } = req.params;
-    const { reassignTo } = req.body; // Can be a category id or null
-
-    const existingCategory = await prisma.category.findUnique({
-      where: { id }
-    });
-
-    if (!existingCategory) {
-      return res.status(404).json({ error: "Category not found" });
-    }
-
-    // Reassign posts to reassignTo category or set to null (uncategorized)
-    await prisma.post.updateMany({
-      where: { categoryId: id },
-      data: { categoryId: reassignTo || null }
-    });
-
-    // Cascade-promote children: set children's parentId to the deleted category's parentId
-    await prisma.category.updateMany({
-      where: { parentId: id },
-      data: { parentId: existingCategory.parentId }
-    });
-
-    // Delete the category
-    await prisma.category.delete({
-      where: { id }
-    });
-
-    return res.json({ message: "Category deleted successfully" });
-  } catch (error) {
-    console.error("Delete category error:", error);
-    return res.status(500).json({ error: "Internal server error" });
-  }
-}
-
-// Tag CRUD
-export async function getTags(req: Request, res: Response) {
-  try {
-    const tags = await prisma.tag.findMany({
-      orderBy: { name: "asc" }
-    });
-    return res.json(tags);
-  } catch (error) {
-    return res.status(500).json({ error: "Internal server error" });
-  }
-}
-
-export async function createTag(req: Request, res: Response) {
-  try {
-    const { name, slug } = req.body;
-    if (!name) {
-      return res.status(400).json({ error: "Tag name is required" });
-    }
-
-    const tagSlug = slug ? slugify(slug) : slugify(name);
-
-    const tag = await prisma.tag.create({
-      data: {
-        name,
-        slug: tagSlug
-      }
-    });
-
-    return res.status(201).json(tag);
-  } catch (error) {
-    return res.status(500).json({ error: "Internal server error" });
-  }
-}
-
-export async function updateTag(req: Request, res: Response) {
-  try {
-    const { id } = req.params;
-    const { name, slug } = req.body;
-    if (!name) {
-      return res.status(400).json({ error: "Tag name is required" });
-    }
-
-    const tagSlug = slug ? slugify(slug) : slugify(name);
-
-    const existing = await prisma.tag.findUnique({ where: { id } });
-    if (!existing) {
-      return res.status(404).json({ error: "Tag not found" });
-    }
-
-    const tag = await prisma.tag.update({
-      where: { id },
-      data: {
-        name,
-        slug: tagSlug
-      }
-    });
-
-    return res.json(tag);
-  } catch (error) {
-    console.error("Update tag error:", error);
-    return res.status(500).json({ error: "Internal server error" });
-  }
-}
-
-export async function deleteTag(req: Request, res: Response) {
-  try {
-    const { id } = req.params;
-
-    const existing = await prisma.tag.findUnique({ where: { id } });
-    if (!existing) {
-      return res.status(404).json({ error: "Tag not found" });
-    }
-
-    await prisma.tag.delete({
-      where: { id }
-    });
-
-    return res.json({ message: "Tag deleted successfully" });
-  } catch (error) {
-    console.error("Delete tag error:", error);
     return res.status(500).json({ error: "Internal server error" });
   }
 }

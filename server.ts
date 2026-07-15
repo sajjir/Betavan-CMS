@@ -53,6 +53,7 @@ import * as productController from "./src/server/controllers/productController.j
 import * as orderController from "./src/server/controllers/orderController.js";
 import * as webhookController from "./src/server/controllers/webhookController.js";
 import * as aiController from "./src/server/controllers/aiController.js";
+import * as taxonomyController from "./src/server/controllers/taxonomyController.js";
 
 // --- API ROUTES ---
 
@@ -67,17 +68,17 @@ app.post("/api/auth/logout", authController.logout);
 app.get("/api/auth/me", authenticate, authController.me);
 app.put("/api/auth/password", authenticate, authController.changePassword);
 
-// Categories Module
-app.get("/api/categories", postController.getCategories);
-app.post("/api/categories", authenticate, requireRole(["ADMIN", "EDITOR"]), postController.createCategory);
-app.put("/api/categories/:id", authenticate, requireRole(["ADMIN", "EDITOR"]), postController.updateCategory);
-app.delete("/api/categories/:id", authenticate, requireRole(["ADMIN", "EDITOR"]), postController.deleteCategory);
+// Taxonomies & Terms Module
+app.get("/api/taxonomies", taxonomyController.getTaxonomies);
+app.get("/api/terms", taxonomyController.getTerms);
+app.post("/api/terms", authenticate, requireRole(["ADMIN", "EDITOR"]), taxonomyController.createTerm);
+app.put("/api/terms/:id", authenticate, requireRole(["ADMIN", "EDITOR"]), taxonomyController.updateTerm);
+app.delete("/api/terms/:id", authenticate, requireRole(["ADMIN", "EDITOR"]), taxonomyController.deleteTerm);
+app.post("/api/terms/generate-description", authenticate, requireRole(["ADMIN", "EDITOR"]), taxonomyController.generateDesc);
 
-// Tags Module
-app.get("/api/tags", postController.getTags);
-app.post("/api/tags", authenticate, requireRole(["ADMIN", "EDITOR"]), postController.createTag);
-app.put("/api/tags/:id", authenticate, requireRole(["ADMIN", "EDITOR"]), postController.updateTag);
-app.delete("/api/tags/:id", authenticate, requireRole(["ADMIN", "EDITOR"]), postController.deleteTag);
+// Categories & Tags (Backward Compatibility)
+app.get("/api/categories", taxonomyController.getCategoriesCompat);
+app.get("/api/tags", taxonomyController.getTagsCompat);
 
 // Posts Module
 app.get("/api/posts", postController.getPosts);
