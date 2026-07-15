@@ -49,6 +49,8 @@ import * as postController from "./src/server/controllers/postController.js";
 import * as mediaController from "./src/server/controllers/mediaController.js";
 import * as pageController from "./src/server/controllers/pageController.js";
 import * as seoController from "./src/server/controllers/seoController.js";
+import * as productController from "./src/server/controllers/productController.js";
+import * as orderController from "./src/server/controllers/orderController.js";
 
 // --- API ROUTES ---
 
@@ -81,6 +83,20 @@ app.get("/api/posts/:slug", postController.getPostBySlug);
 app.post("/api/posts", authenticate, requireRole(["ADMIN", "EDITOR"]), postController.createPost);
 app.put("/api/posts/:id", authenticate, requireRole(["ADMIN", "EDITOR"]), postController.updatePost);
 app.delete("/api/posts/:id", authenticate, requireRole(["ADMIN", "EDITOR"]), postController.deletePost);
+
+// Products Module
+app.get("/api/products", productController.getProducts);
+app.get("/api/products/:slug", productController.getProductBySlug);
+app.post("/api/products", authenticate, requireRole(["ADMIN", "EDITOR"]), productController.createProduct);
+app.put("/api/products/:id", authenticate, requireRole(["ADMIN", "EDITOR"]), productController.updateProduct);
+app.delete("/api/products/:id", authenticate, requireRole(["ADMIN", "EDITOR"]), productController.deleteProduct);
+
+// Orders & Payment Module
+app.post("/api/orders", orderController.createOrder);
+app.get("/api/orders/verify", orderController.verifyPayment);
+app.get("/api/orders/:id", orderController.getOrderById);
+app.get("/api/admin/orders", authenticate, requireRole(["ADMIN", "EDITOR"]), orderController.getOrders);
+app.put("/api/admin/orders/:id/status", authenticate, requireRole(["ADMIN", "EDITOR"]), orderController.updateOrderStatus);
 
 // Downloads (Public, increments download box stats & redirects/triggers)
 app.get("/downloads/:blockId", postController.handleDownload);

@@ -70,3 +70,42 @@ export interface Media {
   altText?: string;
   createdAt: string;
 }
+
+export interface Product {
+  id: string;
+  title: string;
+  slug: string;
+  price: number; // in Toman
+  description?: string | null;
+  coverImage?: string | null;
+  status: "draft" | "published";
+  categoryId?: string | null;
+  category?: Category | null;
+  createdAt: string;
+}
+
+export interface OrderItem {
+  id: string;
+  orderId: string;
+  productId: string;
+  quantity: number;
+  price: number; // in Toman
+  product?: {
+    title: string;
+    coverImage?: string | null;
+  };
+}
+
+export interface Order {
+  id: string;
+  status: "pending" | "paid" | "failed" | "cancelled" | "shipped";
+  total: number; // in Toman
+  customerName: string;
+  customerEmail: string;
+  customerPhone: string;
+  shippingAddress?: string | null;
+  zarinpalAuthority?: string | null;
+  zarinpalRefId?: string | null;
+  items?: OrderItem[];
+  createdAt: string;
+}

@@ -46,11 +46,20 @@ export function Navbar() {
             <Link to="/" className="text-sm font-medium text-neutral-600 hover:text-neutral-900 transition-colors flex items-center">
               <Compass className="w-4 h-4 me-1.5 text-neutral-400" /> {t("nav_back_to_blog")}
             </Link>
+            <Link to="/shop" className="text-sm font-semibold text-neutral-600 hover:text-neutral-900 transition-colors">
+              {locale === "fa" ? "فروشگاه توان" : "Storefront"}
+            </Link>
             {token && user && (
               <>
                 <span className="text-neutral-300">|</span>
                 <Link to="/admin" className="text-sm font-semibold text-neutral-600 hover:text-neutral-900 transition-colors">
                   {t("nav_admin_posts")}
+                </Link>
+                <Link to="/admin/products" className="text-sm font-semibold text-neutral-600 hover:text-neutral-900 transition-colors">
+                  {locale === "fa" ? "محصولات" : "Products"}
+                </Link>
+                <Link to="/admin/orders" className="text-sm font-semibold text-neutral-600 hover:text-neutral-900 transition-colors">
+                  {locale === "fa" ? "سفارش‌ها" : "Orders"}
                 </Link>
                 <Link to="/admin/categories" className="text-sm font-semibold text-neutral-600 hover:text-neutral-900 transition-colors">
                   {t("nav_admin_categories")}

@@ -37,6 +37,13 @@ import { AdminTags } from "./components/AdminTags.js";
 import { AdminPages } from "./components/AdminPages.js";
 import { EditPage } from "./components/EditPage.js";
 import { PageView } from "./components/PageView.js";
+import { AdminProducts } from "./components/AdminProducts.js";
+import { AdminOrders } from "./components/AdminOrders.js";
+import { CartProvider } from "./CartContext.js";
+import { Storefront } from "./components/Storefront.js";
+import { ProductDetail } from "./components/ProductDetail.js";
+import { Checkout } from "./components/Checkout.js";
+import { OrderResult } from "./components/OrderResult.js";
 
 // Helper to check auth
 const isAuthenticated = () => !!localStorage.getItem("accessToken");
@@ -1741,12 +1748,17 @@ export default function App() {
   return (
     <BrowserRouter>
       <LanguageProvider>
-        <div className="min-h-screen bg-neutral-50 flex flex-col justify-between">
-          <div>
-            <Navbar />
+        <CartProvider>
+          <div className="min-h-screen bg-neutral-50 flex flex-col justify-between">
+            <div>
+              <Navbar />
             <Routes>
               <Route path="/" element={<BlogHome />} />
               <Route path="/blog/:slug" element={<BlogPostView />} />
+              <Route path="/shop" element={<Storefront />} />
+              <Route path="/shop/:slug" element={<ProductDetail />} />
+              <Route path="/checkout" element={<Checkout />} />
+              <Route path="/order-result/:orderId" element={<OrderResult />} />
               <Route path="/login" element={<Login />} />
               
               {/* Protected Admin Routes */}
@@ -1822,6 +1834,22 @@ export default function App() {
                   </PrivateRoute>
                 } 
               />
+              <Route 
+                path="/admin/products" 
+                element={
+                  <PrivateRoute>
+                    <AdminProducts />
+                  </PrivateRoute>
+                } 
+              />
+              <Route 
+                path="/admin/orders" 
+                element={
+                  <PrivateRoute>
+                    <AdminOrders />
+                  </PrivateRoute>
+                } 
+              />
               <Route path="/page/:slug" element={<PageView />} />
               
               {/* Fallback */}
@@ -1832,6 +1860,7 @@ export default function App() {
           {/* Global Footer */}
           <Footer />
         </div>
+        </CartProvider>
       </LanguageProvider>
     </BrowserRouter>
   );

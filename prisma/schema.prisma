@@ -68,6 +68,7 @@ model Category {
   parent   Category?  @relation("CategoryToSubcategory", fields: [parentId], references: [id])
   children Category[] @relation("CategoryToSubcategory")
   posts    Post[]
+  products Product[]
 }
 
 model Tag {
@@ -98,23 +99,30 @@ model Media {
 }
 
 model Product {
-  id          String   @id @default(cuid())
+  id          String    @id @default(cuid())
   title       String
-  slug        String   @unique
-  price       Int
+  slug        String    @unique
+  price       Int       // stored in Toman; see currency note above
   description String?
-  status      String   @default("draft")
+  coverImage  String?
+  status      String    @default("draft") // "draft" | "published"
   categoryId  String?
-  createdAt   DateTime @default(now())
+  category    Category? @relation(fields: [categoryId], references: [id])
+  createdAt   DateTime  @default(now())
 }
 
 model Order {
-  id         String      @id @default(cuid())
-  status     String      @default("pending")
-  total      Int
-  customerId String?
-  items      OrderItem[]
-  createdAt  DateTime    @default(now())
+  id                String      @id @default(cuid())
+  status            String      @default("pending") // "pending" | "paid" | "failed" | "cancelled" | "shipped"
+  total             Int         // Toman, computed server-side, never from client
+  customerName      String
+  customerEmail     String
+  customerPhone     String
+  shippingAddress   String?
+  zarinpalAuthority String?
+  zarinpalRefId     String?
+  items             OrderItem[]
+  createdAt         DateTime    @default(now())
 }
 
 model OrderItem {
