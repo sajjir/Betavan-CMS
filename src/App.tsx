@@ -43,6 +43,7 @@ import { AdminWebhooks } from "./components/AdminWebhooks.js";
 import { CartProvider } from "./CartContext.js";
 import { Storefront } from "./components/Storefront.js";
 import { ProductDetail } from "./components/ProductDetail.js";
+import { setPageSeo, clearJsonLd, getArticleSchema, getBreadcrumbSchema, getOrganizationSchema } from "./lib/seo.js";
 import { Checkout } from "./components/Checkout.js";
 import { OrderResult } from "./components/OrderResult.js";
 
@@ -767,6 +768,48 @@ function BlogPostView() {
     loadRelated();
   }, [post]);
 
+  useEffect(() => {
+    if (!post) return;
+
+    const origin = window.location.origin;
+    const url = `${origin}/blog/${post.slug}`;
+    const articleSchema = getArticleSchema({
+      title: post.seoTitle || post.title,
+      description: post.seoDescription || post.excerpt || "",
+      datePublished: post.publishedAt || post.createdAt || new Date().toISOString(),
+      dateModified: post.updatedAt || post.publishedAt || post.createdAt || new Date().toISOString(),
+      authorName: post.author?.name || "Editor",
+      imageUrl: post.coverImage || "https://images.unsplash.com/photo-1517694712202-14dd9538aa97",
+      url
+    });
+
+    const breadcrumbItems = [
+      { name: t("nav_home") || "Home", item: origin }
+    ];
+    if (post.category) {
+      breadcrumbItems.push({
+        name: post.category.name,
+        item: `${origin}/?category=${post.category.id || ""}`
+      });
+    }
+    breadcrumbItems.push({
+      name: post.title,
+      item: url
+    });
+
+    const breadcrumbSchema = getBreadcrumbSchema(breadcrumbItems);
+
+    setPageSeo({
+      title: post.seoTitle || post.title,
+      description: post.seoDescription || post.excerpt || "",
+      jsonLd: [articleSchema, breadcrumbSchema]
+    });
+
+    return () => {
+      clearJsonLd();
+    };
+  }, [post, t]);
+
   const getReadingTime = (currentPost: Post): number => {
     if (!currentPost || !currentPost.blocks) return 1;
     let wordCount = 0;
@@ -1373,6 +1416,11 @@ function EditPost() {
   const [aiDraftGenerating, setAiDraftGenerating] = useState(false);
   const [aiSeoGenerating, setAiSeoGenerating] = useState(false);
 
+  // Link suggestion states
+  const [linkSuggestions, setLinkSuggestions] = useState<any[]>([]);
+  const [loadingSuggestions, setLoadingSuggestions] = useState(false);
+  const [copiedIndex, setCopiedIndex] = useState<{ index: number; type: "md" | "url" } | null>(null);
+
   const handleAiDraftGenerate = async () => {
     if (!aiDraftTopic.trim()) return;
     try {
@@ -1439,6 +1487,50 @@ function EditPost() {
     } finally {
       setAiSeoGenerating(false);
     }
+  };
+
+  const handleAiSuggestLinks = async () => {
+    try {
+      setLoadingSuggestions(true);
+      setError("");
+      const token = localStorage.getItem("accessToken");
+
+      const richTexts = blocks
+        .filter(b => b.type === "RICH_TEXT" && b.data?.html)
+        .map(b => b.data.html.replace(/<[^>]*>/g, ""))
+        .join(" ");
+
+      const res = await fetch("/api/ai/suggest-links", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          "Authorization": `Bearer ${token}`
+        },
+        body: JSON.stringify({
+          title,
+          content: richTexts || excerpt || ""
+        })
+      });
+      const data = await res.json();
+      if (!res.ok) {
+        throw new Error(data.error || "Failed to generate link suggestions");
+      }
+
+      setLinkSuggestions(data.suggestions || []);
+    } catch (err: any) {
+      setError(err.message || "Failed to generate internal link suggestions");
+    } finally {
+      setLoadingSuggestions(false);
+    }
+  };
+
+  const handleCopySuggestion = (index: number, sugTitle: string, sugSlug: string, type: "md" | "url") => {
+    const text = type === "md" ? `[${sugTitle}](/blog/${sugSlug})` : `/blog/${sugSlug}`;
+    navigator.clipboard.writeText(text);
+    setCopiedIndex({ index, type });
+    setTimeout(() => {
+      setCopiedIndex(null);
+    }, 1500);
   };
 
   useEffect(() => {
@@ -1552,6 +1644,96 @@ function EditPost() {
       prev.includes(tagId) ? prev.filter(id => id !== tagId) : [...prev, tagId]
     );
   };
+
+  // Dynamic SEO Checklist calculations
+  const totalTextLength = blocks
+    .filter(b => b.type === "RICH_TEXT" && b.data?.html)
+    .reduce((acc, b) => acc + b.data.html.replace(/<[^>]*>/g, "").trim().length, 0);
+
+  const hasEnoughContent = title.trim().length >= 3 && totalTextLength >= 20;
+
+  // 1. SEO Title
+  const seoTitleLength = seoTitle.trim().length;
+  let seoTitleState: "green" | "yellow" | "red" = "red";
+  let seoTitleMsg = t("seo_checklist_title_empty");
+  if (seoTitleLength > 0) {
+    if (seoTitleLength >= 50 && seoTitleLength <= 60) {
+      seoTitleState = "green";
+      seoTitleMsg = `${t("seo_checklist_title_perfect")} (${seoTitleLength} ${t("seo_checklist_chars")}).`;
+    } else {
+      seoTitleState = "yellow";
+      seoTitleMsg = `${t("seo_checklist_title_warn")} (${seoTitleLength} ${t("seo_checklist_chars")}).`;
+    }
+  }
+
+  // 2. SEO Description
+  const seoDescLength = seoDescription.trim().length;
+  let seoDescState: "green" | "yellow" | "red" = "red";
+  let seoDescMsg = t("seo_checklist_desc_empty");
+  if (seoDescLength > 0) {
+    if (seoDescLength >= 120 && seoDescLength <= 160) {
+      seoDescState = "green";
+      seoDescMsg = `${t("seo_checklist_desc_perfect")} (${seoDescLength} ${t("seo_checklist_chars")}).`;
+    } else {
+      seoDescState = "yellow";
+      seoDescMsg = `${t("seo_checklist_desc_warn")} (${seoDescLength} ${t("seo_checklist_chars")}).`;
+    }
+  }
+
+  // 3. Image Alt texts
+  const imageBlocks = blocks.filter(b => b.type === "IMAGE");
+  let imageAltState: "green" | "yellow" | "red" | "gray" = "gray";
+  let imageAltMsg = t("seo_checklist_img_none");
+  if (imageBlocks.length > 0) {
+    const imagesWithAlt = imageBlocks.filter(b => b.data?.alt && b.data.alt.trim().length > 0);
+    if (imagesWithAlt.length > 0) {
+      imageAltState = "green";
+      imageAltMsg = `${t("seo_checklist_img_perfect")} (${imagesWithAlt.length}/${imageBlocks.length} ${t("seo_checklist_images")}).`;
+    } else {
+      imageAltState = "red";
+      imageAltMsg = t("seo_checklist_img_missing");
+    }
+  }
+
+  // 4. Category and tag assigned
+  const hasCategory = categoryId !== "";
+  const hasTags = tagIds.length > 0;
+  let catTagState: "green" | "yellow" | "red" = "red";
+  let catTagMsg = t("seo_checklist_cattag_none");
+  if (hasCategory && hasTags) {
+    catTagState = "green";
+    catTagMsg = t("seo_checklist_cattag_perfect");
+  } else if (hasCategory || hasTags) {
+    catTagState = "yellow";
+    catTagMsg = hasCategory 
+      ? t("seo_checklist_tag_missing")
+      : t("seo_checklist_cat_missing");
+  }
+
+  // 5. Slug format check
+  const hasSlug = slug.trim().length > 0;
+  const isSlugLowercase = slug === slug.toLowerCase();
+  const isSlugHyphenated = /^[a-z0-9-]+$/.test(slug);
+  let slugState: "green" | "yellow" | "red" = "red";
+  let slugMsg = t("seo_checklist_slug_empty");
+  if (hasSlug) {
+    if (isSlugLowercase && isSlugHyphenated) {
+      slugState = "green";
+      slugMsg = t("seo_checklist_slug_perfect");
+    } else {
+      slugState = "yellow";
+      slugMsg = t("seo_checklist_slug_warn");
+    }
+  }
+
+  // 6. Heading block exists in body
+  const hasHeading = blocks.some(b => b.type === "RICH_TEXT" && b.data?.html && /<h[1-6]/i.test(b.data.html));
+  let headingState: "green" | "red" = "red";
+  let headingMsg = t("seo_checklist_heading_missing");
+  if (hasHeading) {
+    headingState = "green";
+    headingMsg = t("seo_checklist_heading_perfect");
+  }
 
   if (loading) {
     return (
@@ -1799,6 +1981,136 @@ function EditPost() {
             </div>
           </div>
 
+          {/* On-Page SEO Checklist */}
+          <div className="bg-white border border-neutral-200 rounded-2xl p-6 space-y-4 shadow-xs text-start">
+            <h4 className="text-sm font-bold text-neutral-900 border-b border-neutral-100 pb-3 flex items-center gap-1.5">
+              <span className="inline-block p-1 bg-emerald-50 text-emerald-600 rounded-lg">✓</span>
+              {t("seo_engine_checklist")}
+            </h4>
+            
+            <div className="space-y-3.5 pt-1">
+              {(() => {
+                const renderChecklistItem = (itemState: "green" | "yellow" | "red" | "gray", text: string) => {
+                  let iconColor = "text-red-500";
+                  let textColor = "text-neutral-700 font-medium";
+                  let icon = "✗";
+
+                  if (itemState === "green") {
+                    iconColor = "text-emerald-500";
+                    textColor = "text-neutral-900";
+                    icon = "✓";
+                  } else if (itemState === "yellow") {
+                    iconColor = "text-amber-500";
+                    textColor = "text-neutral-700";
+                    icon = "⚠";
+                  } else if (itemState === "gray") {
+                    iconColor = "text-neutral-400";
+                    textColor = "text-neutral-400 font-normal";
+                    icon = "•";
+                  }
+
+                  return (
+                    <div className="flex items-start gap-2.5 text-xs text-start">
+                      <span className={`font-bold shrink-0 text-sm leading-none ${iconColor}`}>{icon}</span>
+                      <span className={textColor}>{text}</span>
+                    </div>
+                  );
+                };
+
+                return (
+                  <>
+                    {renderChecklistItem(seoTitleState, seoTitleMsg)}
+                    {renderChecklistItem(seoDescState, seoDescMsg)}
+                    {renderChecklistItem(imageAltState, imageAltMsg)}
+                    {renderChecklistItem(catTagState, catTagMsg)}
+                    {renderChecklistItem(slugState, slugMsg)}
+                    {renderChecklistItem(headingState, headingMsg)}
+                  </>
+                );
+              })()}
+            </div>
+          </div>
+
+          {/* AI Internal Linking Panel */}
+          <div className="bg-white border border-neutral-200 rounded-2xl p-6 space-y-4 shadow-xs text-start">
+            <h4 className="text-sm font-bold text-neutral-900 border-b border-neutral-100 pb-3 flex items-center gap-1.5">
+              <Cpu className="w-4 h-4 text-brand" />
+              {t("seo_engine_internal_links")}
+            </h4>
+
+            {!hasEnoughContent ? (
+              <p className="text-xs text-neutral-400 leading-relaxed font-normal">
+                {t("seo_engine_write_more")}
+              </p>
+            ) : (
+              <div className="space-y-4">
+                <button
+                  type="button"
+                  onClick={handleAiSuggestLinks}
+                  disabled={loadingSuggestions}
+                  className="w-full py-2 px-3 text-xs font-semibold bg-indigo-50 hover:bg-indigo-100 text-indigo-700 border border-indigo-100 rounded-lg transition-colors flex items-center justify-center gap-1.5 cursor-pointer disabled:opacity-50"
+                >
+                  {loadingSuggestions ? (
+                    <>
+                      <RefreshCw className="w-3 h-3 animate-spin" />
+                      <span>{t("seo_engine_suggesting")}</span>
+                    </>
+                  ) : (
+                    <>
+                      <Cpu className="w-3.5 h-3.5" />
+                      <span>{t("seo_engine_suggest_btn")}</span>
+                    </>
+                  )}
+                </button>
+
+                {linkSuggestions.length > 0 ? (
+                  <div className="space-y-3.5 max-h-[300px] overflow-y-auto pr-1">
+                    {linkSuggestions.map((sug, idx) => (
+                      <div key={idx} className="p-3 bg-neutral-50 rounded-xl border border-neutral-100 space-y-2 text-start">
+                        <div className="font-semibold text-xs text-neutral-800 line-clamp-1">
+                          {sug.title}
+                        </div>
+                        <p className="text-[11px] text-neutral-500 leading-normal italic">
+                          {sug.reason}
+                        </p>
+                        <div className="flex gap-2">
+                          <button
+                            type="button"
+                            onClick={() => handleCopySuggestion(idx, sug.title, sug.slug, "md")}
+                            className="flex-1 py-1 px-2 text-[10px] font-bold bg-white hover:bg-neutral-100 text-neutral-700 border border-neutral-200 rounded-md transition-colors flex items-center justify-center gap-1 cursor-pointer"
+                          >
+                            <Copy className="w-2.5 h-2.5" />
+                            <span>
+                              {copiedIndex?.index === idx && copiedIndex?.type === "md" 
+                                ? t("seo_engine_copied_md") 
+                                : t("seo_engine_copy_md")}
+                            </span>
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => handleCopySuggestion(idx, sug.title, sug.slug, "url")}
+                            className="flex-1 py-1 px-2 text-[10px] font-bold bg-white hover:bg-neutral-100 text-neutral-700 border border-neutral-200 rounded-md transition-colors flex items-center justify-center gap-1 cursor-pointer"
+                          >
+                            <ExternalLink className="w-2.5 h-2.5" />
+                            <span>
+                              {copiedIndex?.index === idx && copiedIndex?.type === "url" 
+                                ? t("seo_engine_copied_url") 
+                                : t("seo_engine_copy_url")}
+                            </span>
+                          </button>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                ) : (
+                  <p className="text-xs text-neutral-400 text-center py-2">
+                    {t("seo_engine_no_suggestions")}
+                  </p>
+                )}
+              </div>
+            )}
+          </div>
+
           {/* Master Save Trigger */}
           <button
             type="submit"
@@ -1919,11 +2231,27 @@ function Footer() {
   );
 }
 
+function SiteWideOrganizationSchema() {
+  useEffect(() => {
+    const origin = window.location.origin;
+    const existing = document.getElementById("jsonld-organization");
+    if (!existing) {
+      const script = document.createElement("script");
+      script.id = "jsonld-organization";
+      script.type = "application/ld+json";
+      script.innerHTML = JSON.stringify(getOrganizationSchema(origin));
+      document.head.appendChild(script);
+    }
+  }, []);
+  return null;
+}
+
 export default function App() {
   return (
     <BrowserRouter>
       <LanguageProvider>
         <CartProvider>
+          <SiteWideOrganizationSchema />
           <div className="min-h-screen bg-neutral-50 flex flex-col justify-between">
             <div>
               <Navbar />

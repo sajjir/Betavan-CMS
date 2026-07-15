@@ -3,6 +3,7 @@ import { useParams, Link } from "react-router-dom";
 import { AlertCircle, RefreshCw, FileText } from "lucide-react";
 import { useLanguage } from "../i18n.js";
 import { BlockRenderer } from "./BlockRenderer.js";
+import { setPageSeo, clearJsonLd, getBreadcrumbSchema } from "../lib/seo.js";
 
 export function PageView() {
   const { slug } = useParams();
@@ -29,16 +30,16 @@ export function PageView() {
 
         // SEO tag updates
         if (data) {
-          document.title = data.seoTitle || data.title;
-          const metaDesc = document.querySelector('meta[name="description"]');
-          if (metaDesc) {
-            metaDesc.setAttribute("content", data.seoDescription || "");
-          } else {
-            const newMeta = document.createElement("meta");
-            newMeta.name = "description";
-            newMeta.content = data.seoDescription || "";
-            document.head.appendChild(newMeta);
-          }
+          const origin = window.location.origin;
+          const breadcrumbSchema = getBreadcrumbSchema([
+            { name: t("nav_home") || "Home", item: origin },
+            { name: data.title, item: `${origin}/page/${slug}` }
+          ]);
+          setPageSeo({
+            title: data.seoTitle || data.title,
+            description: data.seoDescription || "",
+            jsonLd: breadcrumbSchema
+          });
         }
       } catch (err: any) {
         setError(err.message || "An error occurred");
@@ -49,7 +50,10 @@ export function PageView() {
     if (slug) {
       loadPage();
     }
-  }, [slug]);
+    return () => {
+      clearJsonLd();
+    };
+  }, [slug, t]);
 
   if (loading) {
     return (

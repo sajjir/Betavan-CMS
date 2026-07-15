@@ -16,11 +16,12 @@ import {
 import { useLanguage } from "../i18n.js";
 import { useCart } from "../CartContext.js";
 import { Product } from "../types.js";
+import { setPageSeo, clearJsonLd, getProductSchema, getBreadcrumbSchema } from "../lib/seo.js";
 
 export function ProductDetail() {
   const { slug } = useParams<{ slug: string }>();
   const navigate = useNavigate();
-  const { locale } = useLanguage();
+  const { locale, t } = useLanguage();
   const { addToCart } = useCart();
 
   // Data State
@@ -57,6 +58,49 @@ export function ProductDetail() {
       fetchProduct();
     }
   }, [slug, locale]);
+
+  useEffect(() => {
+    if (!product) return;
+
+    const origin = window.location.origin;
+    const url = `${origin}/shop/${product.slug}`;
+    const productSchema = getProductSchema({
+      name: product.title,
+      description: product.description || "",
+      imageUrl: product.coverImage || "",
+      price: product.price,
+      currency: "IRT",
+      availability: "InStock",
+      url
+    });
+
+    const breadcrumbItems = [
+      { name: t("nav_home") || "Home", item: origin },
+      { name: locale === "fa" ? "فروشگاه" : "Shop", item: `${origin}/shop` }
+    ];
+    if (product.category) {
+      breadcrumbItems.push({
+        name: product.category.name,
+        item: `${origin}/shop?category=${product.category.id || ""}`
+      });
+    }
+    breadcrumbItems.push({
+      name: product.title,
+      item: url
+    });
+
+    const breadcrumbSchema = getBreadcrumbSchema(breadcrumbItems);
+
+    setPageSeo({
+      title: product.title,
+      description: product.description || "",
+      jsonLd: [productSchema, breadcrumbSchema]
+    });
+
+    return () => {
+      clearJsonLd();
+    };
+  }, [product, locale, t]);
 
   const handleIncrement = () => setQuantity(prev => prev + 1);
   const handleDecrement = () => setQuantity(prev => (prev > 1 ? prev - 1 : 1));

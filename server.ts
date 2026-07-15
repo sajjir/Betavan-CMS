@@ -112,6 +112,7 @@ app.post("/api/ai/draft-post", authenticate, requireRole(["ADMIN", "EDITOR"]), a
 app.post("/api/ai/product-description", authenticate, requireRole(["ADMIN", "EDITOR"]), aiController.productDescription);
 app.post("/api/ai/alt-text", authenticate, requireRole(["ADMIN", "EDITOR"]), aiController.altText);
 app.post("/api/ai/seo-meta", authenticate, requireRole(["ADMIN", "EDITOR"]), aiController.seoMeta);
+app.post("/api/ai/suggest-links", authenticate, requireRole(["ADMIN", "EDITOR"]), aiController.suggestLinks);
 
 // Downloads (Public, increments download box stats & redirects/triggers)
 app.get("/downloads/:blockId", postController.handleDownload);

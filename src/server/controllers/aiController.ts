@@ -1,10 +1,12 @@
 import { Request, Response } from "express";
+import { prisma } from "../db.js";
 import { AuthenticatedRequest } from "../auth.js";
 import { 
   generatePostDraft, 
   generateProductDescription, 
   generateAltText, 
-  generateSeoMeta 
+  generateSeoMeta,
+  generateInternalLinkSuggestions
 } from "../lib/ai.js";
 
 /**
@@ -81,5 +83,46 @@ export async function seoMeta(req: AuthenticatedRequest, res: Response) {
   } catch (error: any) {
     console.error("AI SEO Meta controller error:", error);
     return res.status(500).json({ error: error.message || "Failed to generate SEO Meta with Gemini." });
+  }
+}
+
+/**
+ * POST /api/ai/suggest-links
+ * Body: { title: string, content: string }
+ */
+export async function suggestLinks(req: AuthenticatedRequest, res: Response) {
+  try {
+    const { title, content } = req.body;
+    if (!title || typeof title !== "string") {
+      return res.status(400).json({ error: "Title is required and must be a string." });
+    }
+
+    const bodyContent = content || "";
+
+    // Fetch existing published posts (id, title, slug, excerpt)
+    const existingPosts = await prisma.post.findMany({
+      where: { status: "PUBLISHED" },
+      select: {
+        id: true,
+        title: true,
+        slug: true,
+        excerpt: true
+      }
+    });
+
+    // Filter out the current post by title or slug if provided
+    const filteredPosts = existingPosts.filter(
+      p => p.title.toLowerCase().trim() !== title.toLowerCase().trim()
+    );
+
+    if (filteredPosts.length === 0) {
+      return res.json({ suggestions: [] });
+    }
+
+    const suggestions = await generateInternalLinkSuggestions(title, bodyContent, filteredPosts);
+    return res.json({ suggestions });
+  } catch (error: any) {
+    console.error("AI Suggest Links controller error:", error);
+    return res.status(500).json({ error: error.message || "Failed to generate link suggestions with Gemini." });
   }
 }
