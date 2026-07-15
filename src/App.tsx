@@ -39,6 +39,7 @@ import { EditPage } from "./components/EditPage.js";
 import { PageView } from "./components/PageView.js";
 import { AdminProducts } from "./components/AdminProducts.js";
 import { AdminOrders } from "./components/AdminOrders.js";
+import { AdminWebhooks } from "./components/AdminWebhooks.js";
 import { CartProvider } from "./CartContext.js";
 import { Storefront } from "./components/Storefront.js";
 import { ProductDetail } from "./components/ProductDetail.js";
@@ -1847,6 +1848,16 @@ export default function App() {
                 element={
                   <PrivateRoute>
                     <AdminOrders />
+                  </PrivateRoute>
+                } 
+              />
+              <Route 
+                path="/admin/webhooks" 
+                element={
+                  <PrivateRoute>
+                    <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-10">
+                      <AdminWebhooks />
+                    </div>
                   </PrivateRoute>
                 } 
               />

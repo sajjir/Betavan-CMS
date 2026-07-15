@@ -1,6 +1,21 @@
 import { Request, Response } from "express";
 import { prisma } from "../db.js";
 import { AuthenticatedRequest } from "../auth.js";
+import { fireWebhook } from "../lib/webhooks.js";
+
+async function triggerOrderPaidWebhook(order: any) {
+  // Fire and forget, logged inside fireWebhook
+  fireWebhook("order.paid", {
+    orderId: order.id,
+    total: order.total,
+    customerEmail: order.customerEmail,
+    items: order.items ? order.items.map((item: any) => ({
+      productId: item.productId,
+      quantity: item.quantity,
+      price: item.price
+    })) : []
+  }).catch(err => console.error("Error triggering order.paid webhook:", err));
+}
 
 // Currency constants and conversion helper
 // We store in Toman in the database (Product.price).
@@ -218,26 +233,30 @@ export async function verifyPayment(req: Request, res: Response) {
 
     // Check if it was a simulated mock payment
     if (authority.startsWith("MOCK_AUTH_")) {
-      await prisma.order.update({
+      const updatedOrder = await prisma.order.update({
         where: { id: order.id },
         data: { 
           status: "paid",
           zarinpalRefId: `MOCK_REF_${Math.floor(Math.random() * 10000000)}`
-        }
+        },
+        include: { items: true }
       });
+      await triggerOrderPaidWebhook(updatedOrder);
       return res.redirect(`/order-result/${order.id}`);
     }
 
     const merchantId = process.env.ZARINPAL_MERCHANT_ID;
     if (!merchantId) {
       // No merchant ID, simulate paid status
-      await prisma.order.update({
+      const updatedOrder = await prisma.order.update({
         where: { id: order.id },
         data: { 
           status: "paid",
           zarinpalRefId: "MOCK_REF_NO_MERCHANT_ID"
-        }
+        },
+        include: { items: true }
       });
+      await triggerOrderPaidWebhook(updatedOrder);
       return res.redirect(`/order-result/${order.id}`);
     }
 
@@ -267,13 +286,15 @@ export async function verifyPayment(req: Request, res: Response) {
     if (response.ok && resData && resData.data && (resData.data.code === 100 || resData.data.code === 101)) {
       const refId = String(resData.data.ref_id || "SUCCESS");
 
-      await prisma.order.update({
+      const updatedOrder = await prisma.order.update({
         where: { id: order.id },
         data: {
           status: "paid",
           zarinpalRefId: refId
-        }
+        },
+        include: { items: true }
       });
+      await triggerOrderPaidWebhook(updatedOrder);
     } else {
       console.error("ZarinPal verification failed:", resData);
       await prisma.order.update({

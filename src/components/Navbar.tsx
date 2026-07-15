@@ -73,6 +73,9 @@ export function Navbar() {
                 <Link to="/admin/settings" className="text-sm font-semibold text-neutral-600 hover:text-neutral-900 transition-colors">
                   {t("nav_admin_settings")}
                 </Link>
+                <Link to="/admin/webhooks" className="text-sm font-semibold text-neutral-600 hover:text-neutral-900 transition-colors">
+                  {t("nav_admin_webhooks")}
+                </Link>
               </>
             )}
           </nav>

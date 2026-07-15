@@ -51,6 +51,7 @@ import * as pageController from "./src/server/controllers/pageController.js";
 import * as seoController from "./src/server/controllers/seoController.js";
 import * as productController from "./src/server/controllers/productController.js";
 import * as orderController from "./src/server/controllers/orderController.js";
+import * as webhookController from "./src/server/controllers/webhookController.js";
 
 // --- API ROUTES ---
 
@@ -97,6 +98,13 @@ app.get("/api/orders/verify", orderController.verifyPayment);
 app.get("/api/orders/:id", orderController.getOrderById);
 app.get("/api/admin/orders", authenticate, requireRole(["ADMIN", "EDITOR"]), orderController.getOrders);
 app.put("/api/admin/orders/:id/status", authenticate, requireRole(["ADMIN", "EDITOR"]), orderController.updateOrderStatus);
+
+// Outgoing Webhooks Module (Admin only)
+app.get("/api/webhooks", authenticate, requireRole(["ADMIN", "EDITOR"]), webhookController.getConfigs);
+app.post("/api/webhooks", authenticate, requireRole(["ADMIN", "EDITOR"]), webhookController.createConfig);
+app.put("/api/webhooks/:id", authenticate, requireRole(["ADMIN", "EDITOR"]), webhookController.updateConfig);
+app.delete("/api/webhooks/:id", authenticate, requireRole(["ADMIN", "EDITOR"]), webhookController.deleteConfig);
+app.get("/api/webhooks/logs", authenticate, requireRole(["ADMIN", "EDITOR"]), webhookController.getLogs);
 
 // Downloads (Public, increments download box stats & redirects/triggers)
 app.get("/downloads/:blockId", postController.handleDownload);

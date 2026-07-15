@@ -109,3 +109,21 @@ export interface Order {
   items?: OrderItem[];
   createdAt: string;
 }
+
+export interface WebhookConfig {
+  id: string;
+  event: string;
+  url: string;
+  enabled: boolean;
+  createdAt: string;
+}
+
+export interface WebhookLog {
+  id: string;
+  event: string;
+  url: string;
+  statusCode?: number | null;
+  success: boolean;
+  responseBody?: string | null;
+  createdAt: string;
+}

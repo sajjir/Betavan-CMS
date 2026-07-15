@@ -1,6 +1,21 @@
 import { Request, Response } from "express";
 import { prisma } from "../db.js";
 import { AuthenticatedRequest } from "../auth.js";
+import { fireWebhook } from "../lib/webhooks.js";
+
+async function triggerPostPublishedWebhook(req: Request, post: any) {
+  const protocol = req.protocol || "https";
+  const host = req.get("host") || "betavan.ir";
+  const url = `${protocol}://${host}/blog/${post.slug}`;
+  
+  // Fire and forget
+  fireWebhook("post.published", {
+    postId: post.id,
+    title: post.title,
+    slug: post.slug,
+    url: url
+  }).catch(err => console.error("Error triggering post.published webhook:", err));
+}
 
 // Helper to slugify strings
 function slugify(text: string): string {
@@ -208,6 +223,10 @@ export async function createPost(req: AuthenticatedRequest, res: Response) {
       }))
     };
 
+    if (post.status === "PUBLISHED") {
+      await triggerPostPublishedWebhook(req, post);
+    }
+
     return res.status(201).json(parsedPost);
   } catch (error: any) {
     console.error("Create post error:", error);
@@ -240,6 +259,8 @@ export async function updatePost(req: AuthenticatedRequest, res: Response) {
     if (!existingPost) {
       return res.status(404).json({ error: "Post not found" });
     }
+
+    const statusChangedToPublished = status === "PUBLISHED" && existingPost.status !== "PUBLISHED";
 
     const updateData: any = {};
     if (title !== undefined) updateData.title = title;
@@ -277,6 +298,10 @@ export async function updatePost(req: AuthenticatedRequest, res: Response) {
       where: { id },
       data: updateData
     });
+
+    if (statusChangedToPublished) {
+      await triggerPostPublishedWebhook(req, updatedPost);
+    }
 
     // Handle block updates: Delete existing blocks and recreate (simplest, most reliable approach)
     if (blocks !== undefined) {

@@ -240,7 +240,25 @@ export const translations = {
     "pages_create_btn": "Create Page",
     "pages_blocks_editor": "Page Content (Blocks Editor)",
     "pages_seo_title": "SEO Title",
-    "pages_seo_desc": "SEO Description"
+    "pages_seo_desc": "SEO Description",
+    "nav_admin_webhooks": "Webhooks",
+    "webhooks_title": "Outgoing Webhooks (n8n)",
+    "webhooks_subtitle": "Trigger n8n or automation workflows when events occur on Betavan.",
+    "webhooks_new": "Configure Webhook",
+    "webhooks_event": "Event Trigger",
+    "webhooks_url": "Webhook URL",
+    "webhooks_enabled": "Enabled",
+    "webhooks_delete_confirm": "Are you sure you want to delete this webhook configuration?",
+    "webhooks_create_btn": "Create Webhook",
+    "webhooks_event_order_paid": "Order Paid (order.paid)",
+    "webhooks_event_post_published": "Post Published (post.published)",
+    "webhooks_logs_title": "Recent Webhook Execution Logs",
+    "webhooks_no_logs": "No execution logs yet. Webhook triggers will be logged here.",
+    "webhooks_log_status": "Status",
+    "webhooks_log_success": "Success",
+    "webhooks_log_failed": "Failed",
+    "webhooks_log_response": "Response Body",
+    "webhooks_log_time": "Timestamp"
   },
   fa: {
     // Navbar / Toggle
@@ -479,7 +497,25 @@ export const translations = {
     "pages_create_btn": "ایجاد برگه",
     "pages_blocks_editor": "محتوای برگه (ویرایشگر بلوک‌ها)",
     "pages_seo_title": "عنوان سئو",
-    "pages_seo_desc": "توضیحات سئو"
+    "pages_seo_desc": "توضیحات سئو",
+    "nav_admin_webhooks": "وب‌هووک‌ها",
+    "webhooks_title": "وب‌هووک‌های خروجی (n8n)",
+    "webhooks_subtitle": "هنگام وقوع رویدادها در بتاوان، سناریوهای n8n یا اتوماسیون‌های خود را اجرا کنید.",
+    "webhooks_new": "پیکربندی وب‌هووک جدید",
+    "webhooks_event": "رویداد محرک",
+    "webhooks_url": "نشانی وب‌هووک (URL)",
+    "webhooks_enabled": "فعال شده",
+    "webhooks_delete_confirm": "آیا از حذف این تنظیمات وب‌هووک مطمئن هستید؟",
+    "webhooks_create_btn": "ایجاد وب‌هووک",
+    "webhooks_event_order_paid": "سفارش پرداخت شده (order.paid)",
+    "webhooks_event_post_published": "مطلب منتشر شده (post.published)",
+    "webhooks_logs_title": "آخرین لاگ‌های اجرای وب‌هووک",
+    "webhooks_no_logs": "هنوز هیچ لاگی ثبت نشده است. لاگ‌های ارسال به محض وقوع تراکنش یا انتشار در اینجا ظاهر می‌شوند.",
+    "webhooks_log_status": "کد وضعیت",
+    "webhooks_log_success": "موفق",
+    "webhooks_log_failed": "ناموفق",
+    "webhooks_log_response": "پاسخ سرور",
+    "webhooks_log_time": "زمان ارسال"
   }
 };
 

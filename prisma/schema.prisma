@@ -133,3 +133,22 @@ model OrderItem {
   quantity  Int
   price     Int
 }
+
+model WebhookConfig {
+  id        String   @id @default(cuid())
+  event     String   // e.g. "order.paid", "post.published"
+  url       String
+  enabled   Boolean  @default(true)
+  createdAt DateTime @default(now())
+}
+
+model WebhookLog {
+  id          String   @id @default(cuid())
+  event       String
+  url         String
+  statusCode  Int?
+  success     Boolean
+  responseBody String?
+  createdAt   DateTime @default(now())
+}
+
