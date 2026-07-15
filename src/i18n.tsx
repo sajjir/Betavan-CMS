@@ -258,7 +258,18 @@ export const translations = {
     "webhooks_log_success": "Success",
     "webhooks_log_failed": "Failed",
     "webhooks_log_response": "Response Body",
-    "webhooks_log_time": "Timestamp"
+    "webhooks_log_time": "Timestamp",
+    "ai_draft_post_btn": "AI Draft",
+    "ai_draft_post_title": "Generate Post Draft with AI",
+    "ai_draft_post_topic": "Post Topic / Keywords",
+    "ai_draft_post_topic_placeholder": "Describe what you want the post to be about...",
+    "ai_draft_post_generate_btn": "Generate Draft",
+    "ai_generating": "Generating with Gemini...",
+    "ai_generate_success": "Content generated successfully as editable draft!",
+    "ai_generate_error": "Failed to generate content: ",
+    "ai_generate_desc_btn": "Generate with AI",
+    "ai_suggest_alt_btn": "Suggest with AI",
+    "ai_generate_seo_btn": "Generate with AI"
   },
   fa: {
     // Navbar / Toggle
@@ -515,7 +526,18 @@ export const translations = {
     "webhooks_log_success": "موفق",
     "webhooks_log_failed": "ناموفق",
     "webhooks_log_response": "پاسخ سرور",
-    "webhooks_log_time": "زمان ارسال"
+    "webhooks_log_time": "زمان ارسال",
+    "ai_draft_post_btn": "پیش‌نویس با هوش مصنوعی",
+    "ai_draft_post_title": "تولید پیش‌نویس مطلب با هوش مصنوعی",
+    "ai_draft_post_topic": "موضوع مطلب / کلمات کلیدی",
+    "ai_draft_post_topic_placeholder": "توضیح دهید که می‌خواهید مطلب درباره چه چیزی باشد...",
+    "ai_draft_post_generate_btn": "تولید پیش‌نویس",
+    "ai_generating": "در حال تولید با جمینای...",
+    "ai_generate_success": "محتوا با موفقیت به عنوان پیش‌نویس قابل ویرایش تولید شد!",
+    "ai_generate_error": "خطا در تولید محتوا: ",
+    "ai_generate_desc_btn": "تولید با هوش مصنوعی",
+    "ai_suggest_alt_btn": "پیشنهاد با هوش مصنوعی",
+    "ai_generate_seo_btn": "تولید با هوش مصنوعی"
   }
 };
 

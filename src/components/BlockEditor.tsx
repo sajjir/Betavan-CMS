@@ -18,7 +18,9 @@ import {
   Heading1,
   Heading2,
   List,
-  ListOrdered
+  ListOrdered,
+  Cpu,
+  RefreshCw
 } from "lucide-react";
 import { MediaModal } from "./MediaModal.js";
 import { useLanguage } from "../i18n.js";
@@ -109,6 +111,34 @@ export function BlockEditor({ blocks, onChange }: BlockEditorProps) {
   const [activeMediaBlockIndex, setActiveMediaBlockIndex] = useState<number | null>(null);
   const [activeMediaTarget, setActiveMediaTarget] = useState<"image_url" | "download_link">("image_url");
   const { t } = useLanguage();
+
+  const [altGeneratingIndex, setAltGeneratingIndex] = useState<number | null>(null);
+
+  const handleAiSuggestAltText = async (index: number, imageUrl: string) => {
+    if (!imageUrl) return;
+    try {
+      setAltGeneratingIndex(index);
+      const token = localStorage.getItem("accessToken");
+      const res = await fetch("/api/ai/alt-text", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          "Authorization": `Bearer ${token}`
+        },
+        body: JSON.stringify({ imageUrl })
+      });
+      const data = await res.json();
+      if (!res.ok) {
+        throw new Error(data.error || "Failed to generate alt text");
+      }
+
+      updateBlockData(index, { alt: data.altText || "" });
+    } catch (err: any) {
+      console.error("AI Alt Text generation error:", err);
+    } finally {
+      setAltGeneratingIndex(null);
+    }
+  };
 
   const blockTypeKeys: Record<string, string> = {
     "RICH_TEXT": "blocks_type_rich_text",
@@ -289,7 +319,22 @@ export function BlockEditor({ blocks, onChange }: BlockEditorProps) {
                       </div>
                       <div className="grid grid-cols-2 gap-2">
                         <div className="space-y-1.5">
-                          <label className="text-xs font-medium text-neutral-700 text-start block">{t("blocks_img_alt")}</label>
+                          <div className="flex items-center justify-between">
+                            <label className="text-xs font-medium text-neutral-700 text-start block">{t("blocks_img_alt")}</label>
+                            <button
+                              type="button"
+                              onClick={() => handleAiSuggestAltText(index, block.data.url)}
+                              disabled={altGeneratingIndex === index || !block.data.url}
+                              className="px-1.5 py-0.5 text-[9px] font-bold bg-indigo-50 hover:bg-indigo-100 text-indigo-700 border border-indigo-100 hover:border-indigo-200 rounded-md transition-colors flex items-center gap-1 cursor-pointer disabled:opacity-50"
+                            >
+                              {altGeneratingIndex === index ? (
+                                <RefreshCw className="w-2.5 h-2.5 animate-spin" />
+                              ) : (
+                                <Cpu className="w-2.5 h-2.5" />
+                              )}
+                              <span>{t("ai_suggest_alt_btn")}</span>
+                            </button>
+                          </div>
                           <input
                             type="text"
                             value={block.data.alt || ""}

@@ -9,7 +9,8 @@ import {
   RefreshCw, 
   Image as ImageIcon, 
   FileText,
-  DollarSign
+  DollarSign,
+  Cpu
 } from "lucide-react";
 import { useLanguage } from "../i18n.js";
 import { Product, Category } from "../types.js";
@@ -37,6 +38,35 @@ export function AdminProducts() {
   const [formCoverImage, setFormCoverImage] = useState("");
   const [formStatus, setFormStatus] = useState<"draft" | "published">("draft");
   const [formCategoryId, setFormCategoryId] = useState("");
+
+  const [aiGenerating, setAiGenerating] = useState(false);
+
+  const handleAiGenerateDescription = async () => {
+    if (!formTitle.trim()) return;
+    try {
+      setAiGenerating(true);
+      setError("");
+      const token = localStorage.getItem("accessToken");
+      const res = await fetch("/api/ai/product-description", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          "Authorization": `Bearer ${token}`
+        },
+        body: JSON.stringify({ title: formTitle })
+      });
+      const data = await res.json();
+      if (!res.ok) {
+        throw new Error(data.error || "Failed to generate description");
+      }
+
+      setFormDescription(data.description || "");
+    } catch (err: any) {
+      setError(err.message || "Failed to generate description");
+    } finally {
+      setAiGenerating(false);
+    }
+  };
 
   // Media picker modal state
   const [isMediaModalOpen, setIsMediaModalOpen] = useState(false);
@@ -472,9 +502,24 @@ export function AdminProducts() {
 
               {/* Description */}
               <div className="space-y-1.5 text-start">
-                <label className="text-xs font-bold text-neutral-500 uppercase tracking-wider block">
-                  {locale === "fa" ? "توضیحات محصول" : "Product Description"}
-                </label>
+                <div className="flex items-center justify-between">
+                  <label className="text-xs font-bold text-neutral-500 uppercase tracking-wider block">
+                    {locale === "fa" ? "توضیحات محصول" : "Product Description"}
+                  </label>
+                  <button
+                    type="button"
+                    onClick={handleAiGenerateDescription}
+                    disabled={aiGenerating || !formTitle.trim()}
+                    className="px-2 py-0.5 text-[10px] font-bold bg-indigo-50 hover:bg-indigo-100 text-indigo-700 border border-indigo-100 hover:border-indigo-200 rounded-md transition-colors flex items-center gap-1 cursor-pointer disabled:opacity-50"
+                  >
+                    {aiGenerating ? (
+                      <RefreshCw className="w-3 h-3 animate-spin" />
+                    ) : (
+                      <Cpu className="w-3 h-3" />
+                    )}
+                    <span>{t("ai_generate_desc_btn")}</span>
+                  </button>
+                </div>
                 <textarea
                   rows={4}
                   value={formDescription}

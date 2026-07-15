@@ -52,6 +52,7 @@ import * as seoController from "./src/server/controllers/seoController.js";
 import * as productController from "./src/server/controllers/productController.js";
 import * as orderController from "./src/server/controllers/orderController.js";
 import * as webhookController from "./src/server/controllers/webhookController.js";
+import * as aiController from "./src/server/controllers/aiController.js";
 
 // --- API ROUTES ---
 
@@ -105,6 +106,12 @@ app.post("/api/webhooks", authenticate, requireRole(["ADMIN", "EDITOR"]), webhoo
 app.put("/api/webhooks/:id", authenticate, requireRole(["ADMIN", "EDITOR"]), webhookController.updateConfig);
 app.delete("/api/webhooks/:id", authenticate, requireRole(["ADMIN", "EDITOR"]), webhookController.deleteConfig);
 app.get("/api/webhooks/logs", authenticate, requireRole(["ADMIN", "EDITOR"]), webhookController.getLogs);
+
+// AI Content Assistant Module (Admin only)
+app.post("/api/ai/draft-post", authenticate, requireRole(["ADMIN", "EDITOR"]), aiController.draftPost);
+app.post("/api/ai/product-description", authenticate, requireRole(["ADMIN", "EDITOR"]), aiController.productDescription);
+app.post("/api/ai/alt-text", authenticate, requireRole(["ADMIN", "EDITOR"]), aiController.altText);
+app.post("/api/ai/seo-meta", authenticate, requireRole(["ADMIN", "EDITOR"]), aiController.seoMeta);
 
 // Downloads (Public, increments download box stats & redirects/triggers)
 app.get("/downloads/:blockId", postController.handleDownload);

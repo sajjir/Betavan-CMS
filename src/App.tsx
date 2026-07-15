@@ -1367,6 +1367,80 @@ function EditPost() {
   const [loading, setLoading] = useState(!isNew);
   const [error, setError] = useState("");
 
+  // AI draft & SEO state
+  const [showAiDraftModal, setShowAiDraftModal] = useState(false);
+  const [aiDraftTopic, setAiDraftTopic] = useState("");
+  const [aiDraftGenerating, setAiDraftGenerating] = useState(false);
+  const [aiSeoGenerating, setAiSeoGenerating] = useState(false);
+
+  const handleAiDraftGenerate = async () => {
+    if (!aiDraftTopic.trim()) return;
+    try {
+      setAiDraftGenerating(true);
+      setError("");
+      const token = localStorage.getItem("accessToken");
+      const res = await fetch("/api/ai/draft-post", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          "Authorization": `Bearer ${token}`
+        },
+        body: JSON.stringify({ topic: aiDraftTopic })
+      });
+      const data = await res.json();
+      if (!res.ok) {
+        throw new Error(data.error || "Failed to generate draft");
+      }
+
+      setTitle(data.title || "");
+      setExcerpt(data.excerpt || "");
+      setBlocks(data.blocks || []);
+      setStatus("DRAFT");
+      setShowAiDraftModal(false);
+      setAiDraftTopic("");
+    } catch (err: any) {
+      setError(err.message || "An error occurred during generation");
+    } finally {
+      setAiDraftGenerating(false);
+    }
+  };
+
+  const handleAiSeoGenerate = async () => {
+    try {
+      setAiSeoGenerating(true);
+      setError("");
+      const token = localStorage.getItem("accessToken");
+
+      const richTexts = blocks
+        .filter(b => b.type === "RICH_TEXT" && b.data?.html)
+        .map(b => b.data.html.replace(/<[^>]*>/g, ""))
+        .join(" ");
+
+      const res = await fetch("/api/ai/seo-meta", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          "Authorization": `Bearer ${token}`
+        },
+        body: JSON.stringify({
+          title,
+          content: richTexts || excerpt || ""
+        })
+      });
+      const data = await res.json();
+      if (!res.ok) {
+        throw new Error(data.error || "Failed to generate SEO Meta");
+      }
+
+      if (data.seoTitle) setSeoTitle(data.seoTitle);
+      if (data.seoDescription) setSeoDescription(data.seoDescription);
+    } catch (err: any) {
+      setError(err.message || "Failed to generate SEO metadata");
+    } finally {
+      setAiSeoGenerating(false);
+    }
+  };
+
   useEffect(() => {
     async function loadEditorOptions() {
       try {
@@ -1513,7 +1587,17 @@ function EditPost() {
           {/* Title & Slug */}
           <div className="bg-white border border-neutral-200 rounded-2xl p-6 space-y-4 shadow-xs text-start">
             <div className="space-y-1.5">
-              <label className="text-xs font-bold text-neutral-700 uppercase tracking-wider block">{t("edit_article_title")}</label>
+              <div className="flex items-center justify-between">
+                <label className="text-xs font-bold text-neutral-700 uppercase tracking-wider block">{t("edit_article_title")}</label>
+                <button
+                  type="button"
+                  onClick={() => setShowAiDraftModal(true)}
+                  className="px-2.5 py-1 text-xs font-semibold bg-indigo-50 hover:bg-indigo-100 text-indigo-700 border border-indigo-100 hover:border-indigo-200 rounded-lg transition-colors flex items-center gap-1 cursor-pointer"
+                >
+                  <Cpu className="w-3.5 h-3.5" />
+                  <span>{t("ai_draft_post_btn")}</span>
+                </button>
+              </div>
               <input
                 type="text"
                 value={title}
@@ -1662,9 +1746,24 @@ function EditPost() {
 
           {/* SEO Metadata Settings */}
           <div className="bg-white border border-neutral-200 rounded-2xl p-6 space-y-4 shadow-xs text-start">
-            <h4 className="text-sm font-bold text-neutral-900 border-b border-neutral-100 pb-3 flex items-center">
-              <Settings className="w-4 h-4 me-1.5 text-brand" /> {t("edit_seo_options")}
-            </h4>
+            <div className="flex items-center justify-between border-b border-neutral-100 pb-3">
+              <h4 className="text-sm font-bold text-neutral-900 flex items-center">
+                <Settings className="w-4 h-4 me-1.5 text-brand" /> {t("edit_seo_options")}
+              </h4>
+              <button
+                type="button"
+                onClick={handleAiSeoGenerate}
+                disabled={aiSeoGenerating || !title}
+                className="px-2 py-1 text-[10px] font-bold bg-indigo-50 hover:bg-indigo-100 text-indigo-700 border border-indigo-100 hover:border-indigo-200 rounded-lg transition-colors flex items-center gap-1 cursor-pointer disabled:opacity-50"
+              >
+                {aiSeoGenerating ? (
+                  <RefreshCw className="w-3 h-3 animate-spin" />
+                ) : (
+                  <Cpu className="w-3 h-3" />
+                )}
+                <span>{t("ai_generate_seo_btn")}</span>
+              </button>
+            </div>
 
             <div className="space-y-1.5">
               <label className="text-[10px] font-bold text-neutral-500 uppercase tracking-wider block">{t("edit_seo_title")}</label>
@@ -1721,6 +1820,81 @@ function EditPost() {
 
         </div>
       </form>
+
+      {/* AI Draft Prompt Modal */}
+      {showAiDraftModal && (
+        <div className="fixed inset-0 bg-black/50 backdrop-blur-xs flex items-center justify-center p-4 z-50">
+          <div className="bg-white rounded-2xl border border-neutral-200 shadow-xl max-w-md w-full p-6 space-y-4 text-start animate-in fade-in zoom-in-95 duration-150">
+            <div className="flex items-center justify-between border-b border-neutral-100 pb-3">
+              <h3 className="text-sm font-bold text-neutral-900 flex items-center gap-2">
+                <Cpu className="w-5 h-5 text-indigo-600" />
+                {t("ai_draft_post_title")}
+              </h3>
+              <button
+                type="button"
+                onClick={() => {
+                  setShowAiDraftModal(false);
+                  setError("");
+                }}
+                className="text-neutral-400 hover:text-neutral-600 font-bold p-1 text-sm leading-none"
+              >
+                ✕
+              </button>
+            </div>
+
+            {error && (
+              <div className="p-3 bg-red-50 border border-red-150 rounded-xl text-xs text-red-700 flex items-center gap-1.5">
+                <AlertCircle className="w-4 h-4 shrink-0" />
+                <span>{error}</span>
+              </div>
+            )}
+
+            <div className="space-y-1.5">
+              <label className="text-xs font-semibold text-neutral-700 block">{t("ai_draft_post_topic")}</label>
+              <textarea
+                rows={3}
+                value={aiDraftTopic}
+                onChange={(e) => setAiDraftTopic(e.target.value)}
+                placeholder={t("ai_draft_post_topic_placeholder")}
+                disabled={aiDraftGenerating}
+                className="w-full text-sm bg-neutral-50 border border-neutral-200 rounded-xl p-3 focus:outline-none focus:border-brand focus:bg-white text-start resize-none"
+              />
+            </div>
+
+            <div className="flex items-center justify-end gap-2 border-t border-neutral-100 pt-3">
+              <button
+                type="button"
+                disabled={aiDraftGenerating}
+                onClick={() => {
+                  setShowAiDraftModal(false);
+                  setError("");
+                }}
+                className="px-3.5 py-1.5 text-xs font-semibold bg-neutral-100 hover:bg-neutral-200 text-neutral-700 rounded-lg transition-colors cursor-pointer"
+              >
+                {t("categories_cancel")}
+              </button>
+              <button
+                type="button"
+                disabled={aiDraftGenerating || !aiDraftTopic.trim()}
+                onClick={handleAiDraftGenerate}
+                className="px-3.5 py-1.5 text-xs font-semibold bg-indigo-600 hover:bg-indigo-700 text-white rounded-lg transition-all flex items-center gap-1.5 disabled:opacity-50 cursor-pointer"
+              >
+                {aiDraftGenerating ? (
+                  <>
+                    <RefreshCw className="w-3.5 h-3.5 animate-spin" />
+                    <span>{t("ai_generating")}</span>
+                  </>
+                ) : (
+                  <>
+                    <Cpu className="w-3.5 h-3.5" />
+                    <span>{t("ai_draft_post_generate_btn")}</span>
+                  </>
+                )}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

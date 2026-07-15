@@ -6,7 +6,8 @@ import {
   AlertTriangle,
   RefreshCw,
   Eye,
-  FileText
+  FileText,
+  Cpu
 } from "lucide-react";
 import { useLanguage } from "../i18n.js";
 import { BlockEditor } from "./BlockEditor.js";
@@ -28,6 +29,43 @@ export function EditPage() {
   const [loading, setLoading] = useState(!isNew);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState("");
+  const [aiSeoGenerating, setAiSeoGenerating] = useState(false);
+
+  const handleAiSeoGenerate = async () => {
+    try {
+      setAiSeoGenerating(true);
+      setError("");
+      const token = localStorage.getItem("accessToken");
+
+      const richTexts = blocks
+        .filter(b => b.type === "RICH_TEXT" && b.data?.html)
+        .map(b => b.data.html.replace(/<[^>]*>/g, ""))
+        .join(" ");
+
+      const res = await fetch("/api/ai/seo-meta", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          "Authorization": `Bearer ${token}`
+        },
+        body: JSON.stringify({
+          title,
+          content: richTexts || ""
+        })
+      });
+      const data = await res.json();
+      if (!res.ok) {
+        throw new Error(data.error || "Failed to generate SEO Meta");
+      }
+
+      if (data.seoTitle) setSeoTitle(data.seoTitle);
+      if (data.seoDescription) setSeoDescription(data.seoDescription);
+    } catch (err: any) {
+      setError(err.message || "Failed to generate SEO metadata");
+    } finally {
+      setAiSeoGenerating(false);
+    }
+  };
 
   useEffect(() => {
     if (isNew) return;
@@ -204,7 +242,24 @@ export function EditPage() {
         <div className="space-y-6">
           {/* SEO Metadata Settings */}
           <div className="bg-white border border-neutral-200 rounded-2xl p-6 space-y-5 shadow-xs text-start">
-            <h4 className="text-sm font-bold text-neutral-900 border-b border-neutral-100 pb-3">{t("edit_seo_title")}</h4>
+            <div className="flex items-center justify-between border-b border-neutral-100 pb-3">
+              <h4 className="text-sm font-bold text-neutral-900 flex items-center">
+                {t("edit_seo_title")}
+              </h4>
+              <button
+                type="button"
+                onClick={handleAiSeoGenerate}
+                disabled={aiSeoGenerating || !title}
+                className="px-2 py-1 text-[10px] font-bold bg-indigo-50 hover:bg-indigo-100 text-indigo-700 border border-indigo-100 hover:border-indigo-200 rounded-lg transition-colors flex items-center gap-1 cursor-pointer disabled:opacity-50"
+              >
+                {aiSeoGenerating ? (
+                  <RefreshCw className="w-3 h-3 animate-spin" />
+                ) : (
+                  <Cpu className="w-3 h-3" />
+                )}
+                <span>{t("ai_generate_seo_btn")}</span>
+              </button>
+            </div>
             
             <div className="space-y-4">
               <div className="space-y-1.5">
